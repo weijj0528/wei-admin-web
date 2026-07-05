@@ -20,6 +20,9 @@ service.interceptors.request.use(
   (config) => {
     const token = getToken()
     if (token) {
+      // WeiTokenFilter 读 Authorization 头（Bearer 前缀）
+      config.headers['Authorization'] = `Bearer ${token}`
+      // Controller @RequestHeader String token 读 token 头
       config.headers['token'] = token
     }
     // 追踪请求以便切换平台时取消
