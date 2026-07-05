@@ -27,17 +27,19 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Fold, Expand, UserFilled, ArrowDown } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/user'
 import { useAppStore } from '@/store/app'
 import { switchPlatform, logout as logoutApi } from '@/api/auth'
+import { cancelAllPendingRequests } from '@/utils/request'
 
 const router = useRouter()
 const userStore = useUserStore()
 const appStore = useAppStore()
+const switching = ref(false)
 
 onMounted(async () => {
   try {
@@ -48,12 +50,18 @@ onMounted(async () => {
 })
 
 async function handleSwitchPlatform(platform: string) {
+  // 防抖 + 取消在飞请求（评审补强 WARNING 1：切换并发处理）
+  if (switching.value) return
+  switching.value = true
   try {
+    cancelAllPendingRequests()
     await switchPlatform(platform)
     await userStore.fetchPermission()
     ElMessage.success('平台已切换')
   } catch (e) {
     // request 拦截器已 toast
+  } finally {
+    switching.value = false
   }
 }
 

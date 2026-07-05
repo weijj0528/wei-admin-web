@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { getToken } from '@/utils/auth'
+import { useUserStore } from '@/store/user'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -29,7 +30,9 @@ const routes: RouteRecordRaw[] = [
       // P2 字典与日志
       { path: 'dict/type', name: 'DictType', component: () => import('@/views/dict/type.vue'), meta: { title: '字典类型' } },
       { path: 'dict/item', name: 'DictItem', component: () => import('@/views/dict/item.vue'), meta: { title: '字典项' } },
-      { path: 'operationLog', name: 'OperationLog', component: () => import('@/views/operationLog/index.vue'), meta: { title: '操作日志' } }
+      { path: 'operationLog', name: 'OperationLog', component: () => import('@/views/operationLog/index.vue'), meta: { title: '操作日志' } },
+      // 子应用路由（wujie 容器）：/platform/{code}/* → PlatformContainer 加载对应子应用
+      { path: 'platform/:platformCode/:pathMatch(.*)*', name: 'PlatformContainer', component: () => import('@/layout/PlatformContainer.vue'), meta: { title: '子应用' } }
     ]
   },
   {
@@ -44,7 +47,7 @@ const router = createRouter({
   routes
 })
 
-// 路由守卫
+// 路由守卫：无 token 跳登录；有 token 但无用户信息 → 拉取
 const whiteList = ['/login']
 router.beforeEach(async (to, _from, next) => {
   const hasToken = getToken()
@@ -52,6 +55,17 @@ router.beforeEach(async (to, _from, next) => {
     if (to.path === '/login') {
       next({ path: '/' })
     } else {
+      const userStore = useUserStore()
+      if (!userStore.username) {
+        try {
+          await userStore.fetchUserInfo()
+          await userStore.fetchPermission()
+        } catch (e) {
+          userStore.logout()
+          next(`/login?redirect=${to.path}`)
+          return
+        }
+      }
       next()
     }
   } else {
