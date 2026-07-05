@@ -39,7 +39,8 @@ service.interceptors.response.use(
     const source = (response.config as any).__cancelSource
     if (source) pendingSources.delete(source)
     const res = response.data
-    if (res.code !== undefined && res.code !== 200) {
+    // 后端 Result 成功码为 "20000"（字符串），错误码为 "50000"
+    if (res.code !== undefined && String(res.code) !== '20000') {
       ElMessage.error(res.msg || '请求失败')
       reportError('api', `${response.config.url} → ${res.msg}`, JSON.stringify(res))
       return Promise.reject(new Error(res.msg || 'Error'))
