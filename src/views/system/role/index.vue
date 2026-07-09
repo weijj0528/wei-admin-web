@@ -1,68 +1,170 @@
 <template>
-  <el-card>
-    <template #header><div class="card-header"><span>角色管理</span><el-button type="primary" :icon="Plus" @click="handleAdd">新建角色</el-button></div></template>
-    <el-table :data="tableData" v-loading="loading" border>
-      <el-table-column prop="name" label="角色名称" />
-      <el-table-column prop="code" label="编码" width="120" />
-      <el-table-column prop="type" label="类型" width="80" />
-      <el-table-column prop="remark" label="备注" show-overflow-tooltip />
-      <el-table-column label="操作" width="200" fixed="right">
-        <template #default="{ row }">
-          <el-button link type="success" @click="handleAssignMenus(row)">分配菜单</el-button>
-          <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-          <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <el-dialog v-model="dialogVisible" :title="editForm.id ? '编辑角色' : '新建角色'" width="480px">
-      <el-form :model="editForm" label-width="80px">
-        <el-form-item label="名称"><el-input v-model="editForm.name" /></el-form-item>
-        <el-form-item label="类型"><el-select v-model="editForm.type"><el-option label="机构角色" value="ORG" /><el-option label="租户角色" value="TENANT" /><el-option label="系统角色" value="SYS" /></el-select></el-form-item>
-        <el-form-item label="父角色ID"><el-input-number v-model="editForm.parent" :min="0" /></el-form-item>
+  <div class="page">
+    <SearchBar :model="search" :fields="fields" @search="handleSearch" @reset="handleReset" />
+    <el-card shadow="never">
+      <template #header>
+        <div class="card-header">
+          <span>角色列表</span>
+          <el-button type="primary" :icon="Plus" @click="handleAdd">新建角色</el-button>
+        </div>
+      </template>
+      <el-table :data="tableData" v-loading="loading" stripe>
+        <el-table-column prop="name" label="角色名称" />
+        <el-table-column prop="code" label="编码" width="160" />
+        <el-table-column prop="type" label="类型" width="100">
+          <template #default="{ row }">
+            <el-tag :type="typeTag(row.type)" effect="light">{{ typeLabel(row.type) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="platform" label="平台" width="140" />
+        <el-table-column prop="remark" label="备注" show-overflow-tooltip />
+        <el-table-column label="操作" width="150" fixed="right">
+          <template #default="{ row }">
+            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
+            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+          </template>
+        </el-table-column>
+        <template #empty><el-empty description="暂无角色" /></template>
+      </el-table>
+      <el-pagination
+        v-model:current-page="pagination.page"
+        v-model:page-size="pagination.size"
+        :total="pagination.total"
+        :page-sizes="[10, 20, 50]"
+        layout="total, sizes, prev, pager, next, jumper"
+        @current-change="handlePageChange"
+        @size-change="handleSizeChange"
+      />
+    </el-card>
+    <el-dialog v-model="dialogVisible" :title="editForm.id ? '编辑角色' : '新建角色'" width="640px">
+      <el-form :model="editForm" label-width="90px">
+        <el-form-item label="角色名称" required><el-input v-model="editForm.name" /></el-form-item>
+        <el-form-item label="编码"><el-input v-model="editForm.code" /></el-form-item>
+        <el-form-item label="类型">
+          <el-select v-model="editForm.type" placeholder="请选择">
+            <el-option label="系统角色 (SYS)" value="SYS" />
+            <el-option label="租户角色 (TENANT)" value="TENANT" />
+            <el-option label="机构角色 (ORG)" value="ORG" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="平台">
+          <el-select v-model="editForm.platform" placeholder="选择平台">
+            <el-option v-for="p in appStore.platforms" :key="p.code" :label="p.name" :value="p.code" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="备注"><el-input v-model="editForm.remark" type="textarea" /></el-form-item>
+        <el-form-item label="菜单权限">
+          <el-tree
+            ref="menuTreeRef"
+            :data="menuTreeData"
+            node-key="id"
+            :props="{ label: 'name', children: 'children' }"
+            show-checkbox
+            default-expand-all
+            class="menu-tree"
+          />
+        </el-form-item>
       </el-form>
-      <template #footer><el-button @click="dialogVisible = false">取消</el-button><el-button type="primary" :loading="submitting" @click="handleSubmit">确定</el-button></template>
+      <template #footer>
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="submitting" @click="handleSubmit">确定</el-button>
+      </template>
     </el-dialog>
-    <el-dialog v-model="menuVisible" title="分配菜单" width="480px">
-      <el-tree ref="treeRef" :data="menuTreeData" show-checkbox node-key="id" :props="{ label: 'name', children: 'children' }" check-strictly default-expand-all />
-      <template #footer><el-button @click="menuVisible = false">取消</el-button><el-button type="primary" :loading="menuSubmitting" @click="handleMenuSubmit">保存</el-button></template>
-    </el-dialog>
-  </el-card>
+  </div>
 </template>
+
 <script setup lang="ts">
-import { ref } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { ref, nextTick } from 'vue'
+import SearchBar from '@/components/SearchBar.vue'
 import { useCrud } from '@/composables/useCrud'
+import { useAppStore } from '@/store/app'
 import { listRoles, createRole, updateRole, deleteRole, type RoleDTO } from '@/api/system/role'
 import { getMenuTree, getRoleMenus } from '@/api/system/menu'
-import { request } from '@/utils/request'
 
-const { loading, submitting, tableData, dialogVisible, editForm, fetchData, handleAdd, handleEdit, handleDelete, handleSubmit } = useCrud<RoleDTO>({ list: listRoles, create: createRole, update: updateRole, delete: deleteRole }, { name: '', type: 'ORG', parent: 0, remark: '' } as RoleDTO)
-
-const menuVisible = ref(false)
-const menuSubmitting = ref(false)
-const menuTreeData = ref<any[]>([])
-const treeRef = ref()
-const currentRoleId = ref(0)
-
-async function handleAssignMenus(row: any) {
-  currentRoleId.value = row.id
-  menuVisible.value = true
-  const [tree, checked]: any = await Promise.all([getMenuTree(), getRoleMenus(row.id)])
-  menuTreeData.value = tree.list || tree || []
-  const checkedMenus = checked.list || checked || []
-  const checkedIds = checkedMenus.map((m: any) => m.id)
-  setTimeout(() => treeRef.value?.setCheckedKeys(checkedIds), 100)
-}
-async function handleMenuSubmit() {
-  menuSubmitting.value = true
-  try {
-    const keys = treeRef.value?.getCheckedKeys() || []
-    await request({ url: `/admin/sys/role/${currentRoleId.value}`, method: 'post', data: { id: currentRoleId.value, menus: keys } })
-    ElMessage.success('菜单分配成功')
-    menuVisible.value = false
-  } finally { menuSubmitting.value = false }
-}
+const appStore = useAppStore()
+const fields = [
+  { prop: 'name', label: '角色名称' },
+  { prop: 'type', label: '类型', type: 'select' as const, options: [
+    { label: '系统角色 (SYS)', value: 'SYS' },
+    { label: '租户角色 (TENANT)', value: 'TENANT' },
+    { label: '机构角色 (ORG)', value: 'ORG' },
+  ] },
+]
+const {
+  loading, submitting, tableData, dialogVisible, editForm, search, pagination,
+  fetchData, handleSearch, handleReset, handlePageChange, handleSizeChange,
+  handleAdd: _handleAdd, handleEdit: _handleEdit, handleDelete, handleSubmit: _handleSubmit,
+} = useCrud<RoleDTO>(
+  { list: listRoles, create: createRole, update: updateRole, delete: deleteRole },
+  { name: '', code: '', type: '', platform: '', remark: '', menus: [] } as RoleDTO
+)
 fetchData()
+
+// 菜单权限树
+const menuTreeRef = ref<any>(null)
+const menuTreeData = ref<any[]>([])
+
+async function loadMenuTree(platform?: string) {
+  if (!platform) { menuTreeData.value = []; return }
+  const res: any = await getMenuTree({ platform })
+  menuTreeData.value = res.list || res || []
+}
+
+// 仅勾选角色已拥有菜单中的叶子节点，避免父节点联动全选子节点
+function leafCheckedIds(tree: any[], idSet: Set<number>): number[] {
+  const result: number[] = []
+  const walk = (nodes: any[]) => {
+    for (const n of nodes) {
+      const hasChildren = n.children && n.children.length
+      if (!hasChildren && idSet.has(n.id)) result.push(n.id)
+      if (hasChildren) walk(n.children)
+    }
+  }
+  walk(tree)
+  return result
+}
+
+// 新建：带入当前平台 + 加载该平台菜单树 + 清空勾选
+async function handleAdd() {
+  _handleAdd()
+  editForm.platform = appStore.currentPlatform
+  await loadMenuTree(appStore.currentPlatform)
+  nextTick(() => menuTreeRef.value?.setCheckedKeys([]))
+}
+
+// 编辑：加载角色所属平台菜单树 + 回显已选（仅叶子，父节点自动半选）
+async function handleEdit(row: any) {
+  _handleEdit(row)
+  const platform = row.platform || appStore.currentPlatform
+  await loadMenuTree(platform)
+  try {
+    const res: any = await getRoleMenus(row.id)
+    const ids: number[] = (res.list || res || []).map((m: any) => m.id)
+    nextTick(() => menuTreeRef.value?.setCheckedKeys(leafCheckedIds(menuTreeData.value, new Set(ids))))
+  } catch (e) {
+    nextTick(() => menuTreeRef.value?.setCheckedKeys([]))
+  }
+}
+
+// 提交：勾选(叶子) + 半选(父) 合并为角色菜单
+async function handleSubmit() {
+  const checked = menuTreeRef.value?.getCheckedKeys() || []
+  const half = menuTreeRef.value?.getHalfCheckedKeys() || []
+  editForm.menus = [...checked, ...half] as number[]
+  await _handleSubmit()
+}
+
+function typeLabel(t?: string) {
+  return { SYS: '系统', TENANT: '租户', ORG: '机构' }[t || ''] || t || '-'
+}
+function typeTag(t?: string) {
+  return ({ SYS: 'danger', TENANT: 'warning', ORG: 'info' }[t || ''] || 'info') as any
+}
 </script>
+
+<style scoped>
+.page { display: flex; flex-direction: column; }
+.card-header { display: flex; align-items: center; justify-content: space-between; font-weight: 600; }
+.menu-tree { width: 100%; max-height: 320px; overflow: auto; border: 1px solid var(--border-light); border-radius: var(--radius); padding: 4px; }
+</style>

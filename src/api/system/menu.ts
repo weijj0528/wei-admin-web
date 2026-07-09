@@ -13,6 +13,7 @@ export interface MenuDTO {
   routePath?: string
   component?: string
   sort?: number
+  baseMenu?: number
   hide?: number
   remark?: string
   apiList?: number[]
