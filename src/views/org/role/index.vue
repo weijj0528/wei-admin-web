@@ -5,6 +5,7 @@
       <template #header>
         <div class="card-header">
           <span>角色列表</span>
+          <el-button type="primary" :icon="Plus" @click="handleAdd">新建角色</el-button>
         </div>
       </template>
       <el-table :data="tableData" v-loading="loading" stripe>
@@ -66,6 +67,7 @@
 </template>
 
 <script setup lang="ts">
+import { Plus } from '@element-plus/icons-vue'
 import { ref, nextTick } from 'vue'
 import SearchBar from '@/components/SearchBar.vue'
 import { useCrud } from '@/composables/useCrud'
@@ -74,17 +76,17 @@ import { listRoles, createRole, updateRole, deleteRole, type RoleDTO } from '@/a
 import { getMenuTree, getRoleMenus } from '@/api/system/menu'
 
 const appStore = useAppStore()
-// 系统角色管理：仅管理系统(SYS)与租户(TENANT)角色（均由平台/租户开通时自动生成，页面不可新建）
+// 机构角色管理：仅管理当前租户的机构(ORG)角色（type 由后端 save 强制为 ORG，表单不提供类型选择）
 const fields = [
   { prop: 'name', label: '角色名称' },
 ]
 const {
   loading, submitting, tableData, dialogVisible, editForm, search, pagination,
   fetchData, handleSearch, handleReset, handlePageChange, handleSizeChange,
-  handleEdit: _handleEdit, handleDelete, handleSubmit: _handleSubmit,
+  handleAdd: _handleAdd, handleEdit: _handleEdit, handleDelete, handleSubmit: _handleSubmit,
 } = useCrud<RoleDTO>(
-  { list: (params: any) => listRoles({ ...params, types: ['SYS', 'TENANT'] }), create: createRole, update: updateRole, delete: deleteRole },
-  { name: '', code: '', type: '', platform: '', remark: '', menus: [] } as RoleDTO
+  { list: (params: any) => listRoles({ ...params, types: ['ORG'], currentTenant: true }), create: createRole, update: updateRole, delete: deleteRole },
+  { name: '', code: '', type: 'ORG', platform: '', remark: '', menus: [] } as RoleDTO
 )
 fetchData()
 
@@ -110,6 +112,14 @@ function leafCheckedIds(tree: any[], idSet: Set<number>): number[] {
   }
   walk(tree)
   return result
+}
+
+// 新建：带入当前平台 + 加载该平台菜单树 + 清空勾选
+async function handleAdd() {
+  _handleAdd()
+  editForm.platform = appStore.currentPlatform
+  await loadMenuTree(appStore.currentPlatform)
+  nextTick(() => menuTreeRef.value?.setCheckedKeys([]))
 }
 
 // 编辑：加载角色所属平台菜单树 + 回显已选（仅叶子，父节点自动半选）

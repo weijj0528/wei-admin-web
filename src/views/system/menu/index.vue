@@ -4,7 +4,18 @@
       <template #header>
         <div class="card-header">
           <span>菜单树</span>
-          <el-button type="primary" :icon="Plus" @click="handleAdd">新建菜单</el-button>
+          <div class="header-tools">
+            <el-select
+              v-model="selectedPlatform"
+              placeholder="选择管理平台"
+              class="platform-select"
+              @change="onPlatformChange"
+            >
+              <template #prefix><el-icon><Grid /></el-icon></template>
+              <el-option v-for="p in platforms" :key="p.code" :label="p.name" :value="p.code" />
+            </el-select>
+            <el-button type="primary" :icon="Plus" @click="handleAdd">新建菜单</el-button>
+          </div>
         </div>
       </template>
       <el-table
@@ -55,7 +66,7 @@
         <el-form-item label="父级ID"><el-input-number v-model="editForm.parent" :min="0" /></el-form-item>
         <el-form-item label="平台">
           <el-select v-model="editForm.platform" placeholder="选择平台">
-            <el-option v-for="p in appStore.platforms" :key="p.code" :label="p.name" :value="p.code" />
+            <el-option v-for="p in platforms" :key="p.code" :label="p.name" :value="p.code" />
           </el-select>
         </el-form-item>
         <el-form-item label="路由"><el-input v-model="editForm.routePath" /></el-form-item>
@@ -75,13 +86,19 @@
 </template>
 
 <script setup lang="ts">
-import { Plus } from '@element-plus/icons-vue'
-import { watch } from 'vue'
+import { Plus, Grid } from '@element-plus/icons-vue'
+import { ref, onMounted } from 'vue'
 import { useCrud } from '@/composables/useCrud'
 import { useAppStore } from '@/store/app'
 import { createMenu, updateMenu, deleteMenu, getMenuTree, type MenuDTO } from '@/api/system/menu'
+import { listPlatforms } from '@/api/system/platform'
+import type { PlatformVO } from '@/api/auth'
 
 const appStore = useAppStore()
+/** 平台选项与「平台管理」同源（/admin/sys/platform 全量），避免与 /admin/auth/platforms 的可访问子集不一致 */
+const platforms = ref<PlatformVO[]>([])
+/** 本页独立选择的管理平台，与 Header 全局平台解耦：直接管理指定平台的菜单 */
+const selectedPlatform = ref(appStore.currentPlatform || '')
 const {
   loading, submitting, tableData, dialogVisible, editForm,
   fetchData, handleAdd: _handleAdd, handleEdit, handleDelete, handleSubmit,
@@ -90,19 +107,32 @@ const {
   { type: 'PAGE', name: '', parent: 0, platform: '', routePath: '', component: '', sort: 0, baseMenu: 0 } as MenuDTO,
   { clientSidePagination: false }
 )
-// 顶层新建默认带入当前平台，避免空 platform 触发后端"平台选择不正确"
+// 顶层新建默认带入当前管理平台，避免空 platform 触发后端"平台选择不正确"
 function handleAdd() {
   _handleAdd()
-  if (!editForm.id) editForm.platform = appStore.currentPlatform
+  if (!editForm.id) editForm.platform = selectedPlatform.value
 }
 function handleAddChild(row: any) {
   handleAdd()
   editForm.parent = row.id
   editForm.platform = row.platform
 }
-fetchData()
-// 全局切换平台后自动刷新菜单列表
-watch(() => appStore.currentPlatform, () => fetchData())
+// 显式按所选平台加载菜单树：后端 /all 仅在 platform 为空时回退 token 平台，
+// 本页自行管理平台选择，不依赖 Header 全局切换的 token 时序。
+async function onPlatformChange() {
+  await fetchData({ platform: selectedPlatform.value })
+}
+onMounted(async () => {
+  // 拉取全量平台作为下拉选项，与「平台管理」页同源（/admin/sys/platform）
+  try {
+    const res: any = await listPlatforms({ page: 1, size: 1000 })
+    platforms.value = res.list || []
+  } catch { /* 拉取失败不阻塞 */ }
+  if (!selectedPlatform.value) {
+    selectedPlatform.value = platforms.value[0]?.code || ''
+  }
+  await fetchData({ platform: selectedPlatform.value })
+})
 
 function typeLabel(t?: string) {
   return { MODULE: '模块', GROUP: '分组', PAGE: '页面', FUNC: '功能' }[t || ''] || t || '-'
@@ -115,5 +145,7 @@ function typeTag(t?: string) {
 <style scoped>
 .page { display: flex; flex-direction: column; }
 .card-header { display: flex; align-items: center; justify-content: space-between; font-weight: 600; }
+.header-tools { display: flex; align-items: center; gap: var(--space-3); }
+.platform-select { width: 200px; }
 .tip { margin-left: 8px; font-size: 12px; color: var(--text-tertiary); }
 </style>

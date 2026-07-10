@@ -5,7 +5,9 @@ import { reportError } from './errorReport'
 
 const service: AxiosInstance = axios.create({
   baseURL: '/',
-  timeout: 15000
+  timeout: 15000,
+  // 数组参数序列化为重复键（types=SYS&types=TENANT），便于后端 Spring 绑定 String[]
+  paramsSerializer: { indexes: null }
 })
 
 // 请求取消（评审补强 WARNING 1：平台切换并发处理）

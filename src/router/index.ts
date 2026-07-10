@@ -25,6 +25,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'org/info', name: 'OrgInfo', component: () => import('@/views/org/info/index.vue'), meta: { title: '机构管理' } },
       { path: 'org/department', name: 'Department', component: () => import('@/views/org/department/index.vue'), meta: { title: '部门管理' } },
       { path: 'org/employee', name: 'Employee', component: () => import('@/views/org/employee/index.vue'), meta: { title: '员工管理' } },
+      { path: 'org/role', name: 'OrgRole', component: () => import('@/views/org/role/index.vue'), meta: { title: '角色管理' } },
       // P1 用户管理
       { path: 'user', name: 'User', component: () => import('@/views/user/index.vue'), meta: { title: '用户管理' } },
       // P2 字典与日志
