@@ -8,6 +8,7 @@ export interface TenantDTO {
   remark?: string
   adminUser?: number
   adminName?: string
+  adminPwd?: string
   status?: number
 }
 
