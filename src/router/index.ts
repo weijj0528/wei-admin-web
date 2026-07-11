@@ -48,33 +48,28 @@ const router = createRouter({
   routes
 })
 
-// 路由守卫：无 token 跳登录；有 token 但无用户信息 → 拉取
+// 路由守卫（Vue Router 4 推荐返回值式导航，避免 next() deprecated 警告）
 const whiteList = ['/login']
-router.beforeEach(async (to, _from, next) => {
+router.beforeEach(async (to) => {
   const hasToken = getToken()
   if (hasToken) {
     if (to.path === '/login') {
-      next({ path: '/' })
-    } else {
-      const userStore = useUserStore()
-      if (!userStore.username) {
-        try {
-          await userStore.fetchUserInfo()
-          await userStore.fetchPermission()
-        } catch (e) {
-          userStore.logout()
-          next(`/login?redirect=${to.path}`)
-          return
-        }
+      return { path: '/' }
+    }
+    const userStore = useUserStore()
+    if (!userStore.username) {
+      try {
+        await userStore.fetchUserInfo()
+        await userStore.fetchPermission()
+      } catch (e) {
+        userStore.logout()
+        return { path: '/login', query: { redirect: to.path } }
       }
-      next()
     }
+    return true
   } else {
-    if (whiteList.includes(to.path)) {
-      next()
-    } else {
-      next(`/login?redirect=${to.path}`)
-    }
+    if (whiteList.includes(to.path)) return true
+    return { path: '/login', query: { redirect: to.path } }
   }
 })
 

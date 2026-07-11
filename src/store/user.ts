@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { getToken, setToken, removeToken } from '@/utils/auth'
 import { login as loginApi, getUserInfo, getPermission, type MenuVO } from '@/api/auth'
 
@@ -9,6 +9,30 @@ export const useUserStore = defineStore('user', () => {
   const username = ref('')
   const buttons = ref<string[]>([])
   const menus = ref<MenuVO[]>([])
+  /** 当前选中的顶部 MODULE id */
+  const currentModuleId = ref<number | null>(null)
+
+  /** 侧边栏菜单：当前 MODULE 的 children（GROUP -> PAGE 两级） */
+  const sidebarMenus = computed<MenuVO[]>(() => {
+    const m = menus.value.find(x => x.id === currentModuleId.value)
+    return m?.children ?? []
+  })
+
+  function setCurrentModule(id: number) {
+    currentModuleId.value = id
+  }
+
+  /** 根据当前路由同步顶部 MODULE 选中（找包含该路由 PAGE 的 MODULE） */
+  function syncModuleFromRoute(path: string) {
+    if (!path || menus.value.length === 0) return
+    for (const m of menus.value) {
+      if (m.routePath === path) { currentModuleId.value = m.id; return }
+      const hit = m.children?.some(
+        g => g.routePath === path || g.children?.some(p => p.routePath === path)
+      )
+      if (hit) { currentModuleId.value = m.id; return }
+    }
+  }
 
   async function login(loginWay: string, loginInfo: object) {
     const data: any = await loginApi(loginWay, loginInfo)
@@ -29,6 +53,9 @@ export const useUserStore = defineStore('user', () => {
   async function fetchPermission() {
     const data: any = await getPermission()
     menus.value = data.list || data || []
+    if (currentModuleId.value === null && menus.value.length > 0) {
+      currentModuleId.value = menus.value[0].id
+    }
     return menus.value
   }
 
@@ -36,9 +63,10 @@ export const useUserStore = defineStore('user', () => {
     token.value = null
     buttons.value = []
     menus.value = []
+    currentModuleId.value = null
     removeToken()
     localStorage.removeItem('wei_admin_buttons')
   }
 
-  return { token, userId, username, buttons, menus, login, fetchUserInfo, fetchPermission, logout }
+  return { token, userId, username, buttons, menus, currentModuleId, sidebarMenus, login, fetchUserInfo, fetchPermission, logout, setCurrentModule, syncModuleFromRoute }
 })
