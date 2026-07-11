@@ -20,6 +20,8 @@ export default defineConfig({
   },
   server: {
     port: 8000,
+    // WSL 访问 /mnt/d (Windows drvfs) 无 inotify，需轮询才能触发热更
+    watch: { usePolling: true, interval: 1000 },
     proxy: {
       '/admin': { target: 'http://localhost:8080', changeOrigin: true, ...stripOrigin },
       '/api': { target: 'http://localhost:8080', changeOrigin: true, ...stripOrigin }
