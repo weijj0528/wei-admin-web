@@ -81,14 +81,6 @@
           />
         </el-form-item>
 
-        <div class="form-row">
-          <el-form-item prop="tenant" class="tenant-item">
-            <el-input v-model="form.tenant" placeholder="租户 ID" :prefix-icon="OfficeBuilding">
-              <template #append>.ten</template>
-            </el-input>
-          </el-form-item>
-        </div>
-
         <el-form-item>
           <el-button
             type="primary"
@@ -114,7 +106,7 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { User, Lock, OfficeBuilding } from '@element-plus/icons-vue'
+import { User, Lock } from '@element-plus/icons-vue'
 import { ElMessage, type FormInstance } from 'element-plus'
 import { useUserStore } from '@/store/user'
 
@@ -124,11 +116,10 @@ const userStore = useUserStore()
 const formRef = ref<FormInstance>()
 const loading = ref(false)
 
-const form = reactive({ username: '', password: '', tenant: '1' })
+const form = reactive({ username: '', password: '' })
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-  tenant: [{ required: true, message: '请输入租户 ID', trigger: 'blur' }],
 }
 
 async function handleLogin() {
@@ -138,7 +129,6 @@ async function handleLogin() {
     loading.value = true
     try {
       const loginInfo = {
-        tenant: form.tenant,
         username: form.username,
         password: btoa(form.password),
       }
