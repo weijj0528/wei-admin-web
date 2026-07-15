@@ -201,7 +201,6 @@ const quickLinks = [
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
-  max-width: 1440px;
 }
 
 /* ========== Hero ========== */

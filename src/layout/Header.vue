@@ -192,17 +192,6 @@ async function handleLogout() {
   background: var(--brand-light);
   font-weight: 600;
 }
-.module-tab.active::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  bottom: -10px;
-  transform: translateX(-50%);
-  width: 20px;
-  height: 3px;
-  border-radius: 3px 3px 0 0;
-  background: var(--brand);
-}
 .m-icon { font-size: 16px; }
 
 .header-right {

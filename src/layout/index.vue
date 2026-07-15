@@ -2,7 +2,7 @@
   <div class="layout">
     <aside
       class="layout-aside"
-      :style="{ width: appStore.sidebarCollapsed ? 'var(--sidebar-w-collapsed)' : 'var(--sidebar-w)' }"
+      :style="{ width: isHome ? '0px' : (appStore.sidebarCollapsed ? 'var(--sidebar-w-collapsed)' : 'var(--sidebar-w)') }"
     >
       <Sidebar />
     </aside>
@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import { watch } from 'vue'
+import { watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import Sidebar from './Sidebar.vue'
 import Header from './Header.vue'
@@ -35,6 +35,8 @@ const appStore = useAppStore()
 const route = useRoute()
 const userStore = useUserStore()
 const tags = useTagsStore()
+// 首页隐藏侧边栏，内容铺满屏幕
+const isHome = computed(() => route.path === '/home' || route.path === '/')
 // 路由变化：同步顶部 MODULE 选中 + 记录标签页
 watch(
   () => route.path,
