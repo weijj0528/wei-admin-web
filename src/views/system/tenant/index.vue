@@ -22,8 +22,8 @@
         </el-table-column>
         <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
-            <el-button v-if="row.status !== 0" link type="success" @click="toggle(row.id, true)">启用</el-button>
-            <el-button v-else link type="warning" @click="toggle(row.id, false)">禁用</el-button>
+            <el-button v-if="row.status !== 0" link type="success" @click="toggle(row, true)">启用</el-button>
+            <el-button v-else link type="warning" @click="toggle(row, false)">禁用</el-button>
             <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
             <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
           </template>
@@ -72,7 +72,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import SearchBar from '@/components/SearchBar.vue'
 import { useCrud } from '@/composables/useCrud'
 import { listTenants, createTenant, updateTenant, deleteTenant, enableTenant, disableTenant, type TenantDTO } from '@/api/system/tenant'
@@ -127,10 +127,17 @@ async function handleSubmit() {
   }
 }
 
-async function toggle(id: number, enable: boolean) {
-  await (enable ? enableTenant(id) : disableTenant(id))
-  ElMessage.success(enable ? '已启用' : '已禁用')
-  fetchData()
+async function toggle(row: TenantDTO, enable: boolean) {
+  try {
+    await ElMessageBox.confirm(`确认${enable ? '启用' : '禁用'}租户「${row.name || row.code}」？`, '提示', { type: 'warning' })
+  } catch {
+    return // 用户取消
+  }
+  try {
+    await (enable ? enableTenant(row.id!) : disableTenant(row.id!))
+    ElMessage.success(enable ? '已启用' : '已禁用')
+    fetchData()
+  } catch { /* request 拦截器已 toast */ }
 }
 </script>
 
