@@ -5,7 +5,7 @@
       <template #header>
         <div class="card-header"><span>日志列表</span></div>
       </template>
-      <el-table :data="tableData" v-loading="loading" stripe>
+      <el-table :data="tableData" v-loading="loading" stripe height="100%">
         <el-table-column prop="username" label="操作人" width="120" />
         <el-table-column prop="operation" label="操作" />
         <el-table-column prop="method" label="方法" show-overflow-tooltip />

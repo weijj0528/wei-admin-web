@@ -8,7 +8,7 @@
           <el-button type="primary" :icon="Plus" @click="handleAdd">新建机构</el-button>
         </div>
       </template>
-      <el-table :data="tableData" v-loading="loading" stripe>
+      <el-table :data="tableData" v-loading="loading" stripe height="100%">
         <el-table-column prop="code" label="机构编码" width="160" />
         <el-table-column prop="name" label="机构名称" />
         <el-table-column prop="remark" label="备注" show-overflow-tooltip />

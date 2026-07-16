@@ -8,7 +8,7 @@
           <el-button type="primary" :icon="Plus" @click="handleAdd">新建员工</el-button>
         </div>
       </template>
-      <el-table :data="tableData" v-loading="loading" stripe>
+      <el-table :data="tableData" v-loading="loading" stripe height="100%">
         <el-table-column prop="code" label="员工编码" width="120" />
         <el-table-column prop="name" label="姓名" />
         <el-table-column prop="userName" label="账号" />

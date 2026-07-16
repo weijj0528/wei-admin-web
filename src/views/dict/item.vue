@@ -8,7 +8,7 @@
           <el-button type="primary" :icon="Plus" @click="handleAdd">新建项</el-button>
         </div>
       </template>
-      <el-table :data="tableData" v-loading="loading" stripe>
+      <el-table :data="tableData" v-loading="loading" stripe height="100%">
         <el-table-column prop="typeCode" label="类型编码" width="150" />
         <el-table-column prop="code" label="项编码" width="120" />
         <el-table-column prop="name" label="项名称" />

@@ -7,7 +7,7 @@
           <span>角色列表</span>
         </div>
       </template>
-      <el-table :data="tableData" v-loading="loading" stripe>
+      <el-table :data="tableData" v-loading="loading" stripe height="100%">
         <el-table-column prop="name" label="角色名称" />
         <el-table-column prop="code" label="编码" width="160" />
         <el-table-column prop="type" label="类型" width="100">

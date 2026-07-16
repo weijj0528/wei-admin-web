@@ -14,6 +14,7 @@
         :tree-props="{ children: 'children' }"
         stripe
         default-expand-all
+        height="100%"
       >
         <el-table-column prop="name" label="部门名称" width="220" />
         <el-table-column prop="code" label="编码" width="140" />

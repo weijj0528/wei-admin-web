@@ -8,7 +8,7 @@
           <el-button type="primary" :icon="Plus" @click="handleAdd">新建用户</el-button>
         </div>
       </template>
-      <el-table :data="tableData" v-loading="loading" stripe>
+      <el-table :data="tableData" v-loading="loading" stripe height="100%">
         <el-table-column prop="name" label="用户名" width="140" />
         <el-table-column prop="nickname" label="昵称" />
         <el-table-column prop="phone" label="手机" width="140" />

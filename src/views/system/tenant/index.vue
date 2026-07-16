@@ -8,7 +8,7 @@
           <el-button type="primary" :icon="Plus" @click="handleAdd">新建租户</el-button>
         </div>
       </template>
-      <el-table :data="tableData" v-loading="loading" stripe>
+      <el-table :data="tableData" v-loading="loading" stripe height="100%">
         <el-table-column prop="code" label="租户编码" width="180" />
         <el-table-column prop="name" label="租户名称" />
         <el-table-column prop="platform" label="平台" width="140" />

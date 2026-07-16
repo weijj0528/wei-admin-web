@@ -364,8 +364,14 @@ button { font-family: inherit; }
   display: flex;
   flex-direction: column;
   gap: 0;
+  height: 100%;
 }
 .page .el-card + .el-card { margin-top: var(--space-4); }
+/* 列表页固定表格高度：el-card 弹性填充，表格表体独立滚动，分页固定底部 */
+.page > .el-card { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+.page > .el-card > .el-card__body { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+.page .el-table { flex: 1; min-height: 0; }
+.page .el-pagination { flex-shrink: 0; }
 .card-header {
   display: flex;
   align-items: center;
@@ -384,3 +390,9 @@ button { font-family: inherit; }
 
 /* 表格行操作按钮间距 */
 .el-table .el-button + .el-button { margin-left: 4px; }
+
+/* ========== Loading 品牌色优化 ========== */
+.el-loading-mask { background: rgba(255, 255, 255, 0.55); backdrop-filter: blur(3px); }
+.el-loading-spinner .circular { width: 34px; height: 34px; }
+.el-loading-spinner .path { stroke: var(--brand); stroke-width: 2.5; }
+.el-loading-spinner .el-loading-text { color: var(--brand); font-size: var(--text-sm); font-weight: 500; }

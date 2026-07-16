@@ -8,7 +8,7 @@
           <el-button type="primary" :icon="Plus" @click="handleAdd">新建接口</el-button>
         </div>
       </template>
-      <el-table :data="tableData" v-loading="loading" stripe>
+      <el-table :data="tableData" v-loading="loading" stripe height="100%">
         <el-table-column prop="name" label="接口名称" />
         <el-table-column prop="module" label="模块" width="120" />
         <el-table-column prop="path" label="地址" show-overflow-tooltip />

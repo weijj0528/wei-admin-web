@@ -30,6 +30,7 @@
             :tree-props="{ children: 'children' }"
             stripe
             default-expand-all
+            height="100%"
           >
             <el-table-column prop="name" label="菜单名称" width="220">
               <template #header>
@@ -231,13 +232,13 @@ function typeTag(t?: string) {
 .card-header { display: flex; align-items: center; justify-content: space-between; font-weight: 600; }
 .header-tools { display: flex; align-items: center; gap: var(--space-3); }
 .platform-select { width: 200px; }
-.menu-layout { display: flex; align-items: flex-start; gap: 8px; }
+.menu-layout { display: flex; align-items: flex-start; gap: 8px; flex: 1; min-height: 0; overflow: hidden; }
 .module-tabs { flex-shrink: 0; }
 .module-tabs :deep(.el-tabs__content) { display: none; }
 .module-tabs :deep(.el-tabs__header) { margin: 0; }
 .module-tabs :deep(.el-tabs__header.is-left) { margin-right: 0; }
 .module-tabs :deep(.el-tabs__item.is-left) { padding: 0 12px; }
-.menu-table-wrap { flex: 1; min-width: 0; }
+.menu-table-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; align-self: stretch; }
 .parent-select { width: 100%; }
 .tip { margin-left: 8px; font-size: 12px; color: var(--text-tertiary); }
 </style>
