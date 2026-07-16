@@ -18,39 +18,50 @@
           </div>
         </div>
       </template>
-      <el-table
-        :data="tableData"
-        v-loading="loading"
-        row-key="id"
-        :tree-props="{ children: 'children' }"
-        stripe
-        default-expand-all
-      >
-        <el-table-column prop="name" label="菜单名称" width="200" />
-        <el-table-column prop="type" label="类型" width="90">
-          <template #default="{ row }">
-            <el-tag :type="typeTag(row.type)" effect="light" size="small">{{ typeLabel(row.type) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="code" label="编码" width="120" />
-        <el-table-column prop="routePath" label="路由" show-overflow-tooltip />
-        <el-table-column prop="component" label="组件" show-overflow-tooltip />
-        <el-table-column prop="sort" label="排序" width="80" />
-        <el-table-column label="基础" width="70">
-          <template #default="{ row }">
-            <el-tag v-if="row.baseMenu === 1" type="success" effect="light" size="small">是</el-tag>
-            <span v-else>-</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="220" fixed="right">
-          <template #default="{ row }">
-            <el-button link type="success" @click="handleAddChild(row)">新增子级</el-button>
-            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
-          </template>
-        </el-table-column>
-        <template #empty><el-empty description="暂无菜单" /></template>
-      </el-table>
+      <div class="menu-layout">
+        <el-tabs v-model="activeModuleId" tab-position="left" class="module-tabs">
+          <el-tab-pane v-for="m in tableData" :key="m.id" :label="m.name" :name="String(m.id)" />
+        </el-tabs>
+        <div class="menu-table-wrap">
+          <el-table
+            :data="filteredTree"
+            v-loading="loading"
+            row-key="id"
+            :tree-props="{ children: 'children' }"
+            stripe
+            default-expand-all
+          >
+            <el-table-column prop="name" label="菜单名称" width="220">
+              <template #header>
+                <el-input v-model="filterText" placeholder="菜单名称" clearable :prefix-icon="Search" size="small" />
+              </template>
+            </el-table-column>
+            <el-table-column prop="type" label="类型" width="90">
+              <template #default="{ row }">
+                <el-tag :type="typeTag(row.type)" effect="light" size="small">{{ typeLabel(row.type) }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="code" label="编码" width="120" />
+            <el-table-column prop="routePath" label="路由" show-overflow-tooltip />
+            <el-table-column prop="component" label="组件" show-overflow-tooltip />
+            <el-table-column prop="sort" label="排序" width="80" />
+            <el-table-column label="基础" width="70">
+              <template #default="{ row }">
+                <el-tag v-if="row.baseMenu === 1" type="success" effect="light" size="small">是</el-tag>
+                <span v-else>-</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="220" fixed="right">
+              <template #default="{ row }">
+                <el-button v-if="row.type !== 'FUNC'" link type="success" @click="handleAddChild(row)">新增子级</el-button>
+                <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
+                <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+              </template>
+            </el-table-column>
+            <template #empty><el-empty description="暂无菜单" /></template>
+          </el-table>
+        </div>
+      </div>
     </el-card>
     <el-dialog v-model="dialogVisible" :title="editForm.id ? '编辑菜单' : '新建菜单'" width="560px">
       <el-form :model="editForm" label-width="80px">
@@ -63,9 +74,21 @@
           </el-select>
         </el-form-item>
         <el-form-item label="名称" required><el-input v-model="editForm.name" /></el-form-item>
-        <el-form-item label="父级ID"><el-input-number v-model="editForm.parent" :min="0" /></el-form-item>
+        <el-form-item label="父级">
+          <el-tree-select
+            v-model="editForm.parent"
+            :data="parentTreeData"
+            :props="{ label: 'name', children: 'children' }"
+            node-key="id"
+            check-strictly
+            :render-after-expand="false"
+            placeholder="选择父级（顶层为无父级）"
+            class="parent-select"
+            @change="onParentChange"
+          />
+        </el-form-item>
         <el-form-item label="平台">
-          <el-select v-model="editForm.platform" placeholder="选择平台">
+          <el-select v-model="editForm.platform" disabled>
             <el-option v-for="p in platforms" :key="p.code" :label="p.name" :value="p.code" />
           </el-select>
         </el-form-item>
@@ -86,8 +109,8 @@
 </template>
 
 <script setup lang="ts">
-import { Plus, Grid } from '@element-plus/icons-vue'
-import { ref, onMounted } from 'vue'
+import { Plus, Grid, Search } from '@element-plus/icons-vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useCrud } from '@/composables/useCrud'
 import { useAppStore } from '@/store/app'
 import { createMenu, updateMenu, deleteMenu, getMenuTree, type MenuDTO } from '@/api/system/menu'
@@ -104,9 +127,68 @@ const {
   fetchData, handleAdd: _handleAdd, handleEdit, handleDelete, handleSubmit,
 } = useCrud<MenuDTO>(
   { list: getMenuTree, create: createMenu, update: updateMenu, delete: deleteMenu },
-  { type: 'PAGE', name: '', parent: 0, platform: '', routePath: '', component: '', sort: 0, baseMenu: 0 } as MenuDTO,
+  { type: 'MODULE', name: '', parent: 0, platform: '', routePath: '', component: '', sort: 0, baseMenu: 0 } as MenuDTO,
   { clientSidePagination: false }
 )
+/** 子级类型推断：模块->分组->页面->按钮 */
+const CHILD_TYPE: Record<string, string> = { MODULE: 'GROUP', GROUP: 'PAGE', PAGE: 'FUNC' }
+/** 当前选中的模块 tab（顶层 MODULE id 字符串） */
+const activeModuleId = ref<string>('')
+/** el-table 仅渲染当前选中模块的子树，菜单多时聚焦操作 */
+const currentModuleTree = computed(() => {
+  if (!activeModuleId.value) return tableData.value
+  const m = tableData.value.find(x => String(x.id) === activeModuleId.value)
+  return m ? [m] : tableData.value
+})
+/** 菜单名称前端过滤关键字 */
+const filterText = ref('')
+/** 递归过滤树：name 命中关键字则保留整棵子树；否则仅保留命中子树（保留祖先链） */
+function filterTree(nodes: any[], keyword: string): any[] {
+  if (!keyword) return nodes
+  const kw = keyword.toLowerCase()
+  const result: any[] = []
+  for (const n of nodes) {
+    const matched = (n.name || '').toLowerCase().includes(kw)
+    const children = n.children ? filterTree(n.children, keyword) : []
+    if (matched || children.length) {
+      result.push({ ...n, children: matched ? n.children : children })
+    }
+  }
+  return result
+}
+/** 当前模块子树按名称过滤后的结果 */
+const filteredTree = computed(() => filterTree(currentModuleTree.value, filterText.value.trim()))
+/** 父级树选择数据：虚拟顶层节点 + 当前平台完整菜单树 */
+const parentTreeData = computed(() => [
+  { id: 0, name: '顶层（无父级）', children: tableData.value },
+])
+// tableData 变化时默认选中第一个模块（当前选中丢失则回退首个）
+watch(tableData, (data) => {
+  if (data.length && !data.some(x => String(x.id) === activeModuleId.value)) {
+    activeModuleId.value = String(data[0].id)
+  }
+})
+// 递归查找节点类型
+function findNodeType(nodes: any[], id: number): string | null {
+  for (const n of nodes) {
+    if (n.id === id) return n.type
+    if (n.children) {
+      const t = findNodeType(n.children, id)
+      if (t) return t
+    }
+  }
+  return null
+}
+// 选父级后自动推断子级类型：顶层->MODULE，否则按父级 type 映射
+function onParentChange(val: any) {
+  const parentId = Number(val)
+  if (!parentId || parentId === 0) {
+    editForm.type = 'MODULE'
+    return
+  }
+  const parentType = findNodeType(tableData.value, parentId)
+  if (parentType) editForm.type = CHILD_TYPE[parentType] || editForm.type || 'MODULE'
+}
 // 顶层新建默认带入当前管理平台，避免空 platform 触发后端"平台选择不正确"
 function handleAdd() {
   _handleAdd()
@@ -116,6 +198,8 @@ function handleAddChild(row: any) {
   handleAdd()
   editForm.parent = row.id
   editForm.platform = row.platform
+  // 子级类型按父级推断：模块->分组->页面->按钮
+  editForm.type = CHILD_TYPE[row.type] || row.type
 }
 // 显式按所选平台加载菜单树：后端 /all 仅在 platform 为空时回退 token 平台，
 // 本页自行管理平台选择，不依赖 Header 全局切换的 token 时序。
@@ -147,5 +231,13 @@ function typeTag(t?: string) {
 .card-header { display: flex; align-items: center; justify-content: space-between; font-weight: 600; }
 .header-tools { display: flex; align-items: center; gap: var(--space-3); }
 .platform-select { width: 200px; }
+.menu-layout { display: flex; align-items: flex-start; gap: 8px; }
+.module-tabs { flex-shrink: 0; }
+.module-tabs :deep(.el-tabs__content) { display: none; }
+.module-tabs :deep(.el-tabs__header) { margin: 0; }
+.module-tabs :deep(.el-tabs__header.is-left) { margin-right: 0; }
+.module-tabs :deep(.el-tabs__item.is-left) { padding: 0 12px; }
+.menu-table-wrap { flex: 1; min-width: 0; }
+.parent-select { width: 100%; }
 .tip { margin-left: 8px; font-size: 12px; color: var(--text-tertiary); }
 </style>
