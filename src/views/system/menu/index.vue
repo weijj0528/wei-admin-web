@@ -96,10 +96,11 @@
             <el-option v-for="p in platforms" :key="p.code" :label="p.name" :value="p.code" />
           </el-select>
         </el-form-item>
-        <el-form-item label="路由"><el-input v-model="editForm.routePath" /></el-form-item>
-        <el-form-item label="功能标识">
-          <el-input v-model="editForm.routeName" placeholder="FUNC 填功能标识，如 platform:save" />
+        <el-form-item v-if="editForm.type === 'FUNC'" label="功能标识">
+          <el-input v-model="editForm.routeName" placeholder="如 Save" />
+          <span class="tip">完整标识：{{ funcPerm || '请填功能标识并选父页面' }}</span>
         </el-form-item>
+        <el-form-item v-else label="路由"><el-input v-model="editForm.routePath" placeholder="如 /system/platform" /></el-form-item>
         <el-form-item label="组件"><el-input v-model="editForm.component" /></el-form-item>
         <el-form-item label="API接口">
           <el-select v-model="editForm.apiList" multiple filterable clearable placeholder="选择需要的接口" class="api-select">
@@ -139,7 +140,7 @@ const sysApis = ref<SysApiVO[]>([])
 const selectedPlatform = ref(appStore.currentPlatform || '')
 const {
   loading, submitting, tableData, dialogVisible, editForm,
-  fetchData, handleAdd: _handleAdd, handleEdit: _handleEdit, handleDelete, handleSubmit,
+  fetchData, handleAdd: _handleAdd, handleEdit: _handleEdit, handleDelete, handleSubmit: _handleSubmit,
 } = useCrud<MenuDTO>(
   { list: getMenuTree, create: createMenu, update: updateMenu, delete: deleteMenu },
   { type: 'MODULE', name: '', parent: 0, platform: '', icon: '', iconType: 0, routeName: '', routePath: '', component: '', sort: 0, baseMenu: 0, apiList: [] } as MenuDTO,
@@ -194,6 +195,28 @@ function findNodeType(nodes: any[], id: number): string | null {
   }
   return null
 }
+// 递归查找节点（用于获取父页面 routePath 生成功能标识前缀）
+function findNode(nodes: any[], id: number): any {
+  for (const n of nodes) {
+    if (n.id === id) return n
+    if (n.children) {
+      const f = findNode(n.children, id)
+      if (f) return f
+    }
+  }
+  return null
+}
+/** FUNC 功能权限标识：父页面 routePath 前缀 + routeName 小写
+ *  例：父 /system/platform + routeName Save -> system:platform:save */
+const funcPerm = computed(() => {
+  if (editForm.type !== 'FUNC' || !editForm.parent) return ''
+  const parent = findNode(tableData.value, editForm.parent)
+  const parentRoute = parent?.routePath || ''
+  const prefix = parentRoute.replace(/^\//, '').replace(/\//g, ':')
+  const name = (editForm.routeName || '').trim().toLowerCase()
+  if (!name) return prefix ? `${prefix}:` : ''
+  return prefix ? `${prefix}:${name}` : name
+})
 // 选父级后自动推断子级类型：顶层->MODULE，否则按父级 type 映射
 function onParentChange(val: any) {
   const parentId = Number(val)
@@ -211,6 +234,13 @@ async function handleEdit(row: any) {
     const detail: any = await getMenu(row.id)
     editForm.apiList = detail?.apiList || []
   } catch { /* 拉取失败不阻塞 */ }
+}
+// 提交：FUNC 类型自动用 funcPerm 覆盖 routePath（完整权限标识）
+async function handleSubmit() {
+  if (editForm.type === 'FUNC') {
+    editForm.routePath = funcPerm.value
+  }
+  await _handleSubmit()
 }
 // 顶层新建默认带入当前管理平台，避免空 platform 触发后端"平台选择不正确"
 function handleAdd() {
