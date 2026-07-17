@@ -75,6 +75,9 @@
           </el-select>
         </el-form-item>
         <el-form-item label="名称" required><el-input v-model="editForm.name" /></el-form-item>
+        <el-form-item label="图标">
+          <IconPicker v-model="editForm.icon" />
+        </el-form-item>
         <el-form-item label="父级">
           <el-tree-select
             v-model="editForm.parent"
@@ -94,7 +97,15 @@
           </el-select>
         </el-form-item>
         <el-form-item label="路由"><el-input v-model="editForm.routePath" /></el-form-item>
+        <el-form-item label="功能标识">
+          <el-input v-model="editForm.routeName" placeholder="FUNC 填功能标识，如 platform:save" />
+        </el-form-item>
         <el-form-item label="组件"><el-input v-model="editForm.component" /></el-form-item>
+        <el-form-item label="API接口">
+          <el-select v-model="editForm.apiList" multiple filterable clearable placeholder="选择需要的接口" class="api-select">
+            <el-option v-for="a in sysApis" :key="a.id" :label="`${a.name}(${a.path})`" :value="a.id" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="排序"><el-input-number v-model="editForm.sort" :min="0" /></el-form-item>
         <el-form-item label="基础菜单">
           <el-switch v-model="editForm.baseMenu" :active-value="1" :inactive-value="0" />
@@ -114,21 +125,24 @@ import { Plus, Grid, Search } from '@element-plus/icons-vue'
 import { ref, computed, watch, onMounted } from 'vue'
 import { useCrud } from '@/composables/useCrud'
 import { useAppStore } from '@/store/app'
-import { createMenu, updateMenu, deleteMenu, getMenuTree, type MenuDTO } from '@/api/system/menu'
+import { createMenu, updateMenu, deleteMenu, getMenuTree, getMenu, listSysApi, type MenuDTO, type SysApiVO } from '@/api/system/menu'
 import { listPlatforms } from '@/api/system/platform'
 import type { PlatformVO } from '@/api/auth'
+import IconPicker from '@/components/IconPicker.vue'
 
 const appStore = useAppStore()
 /** 平台选项与「平台管理」同源（/admin/sys/platform 全量），避免与 /admin/auth/platforms 的可访问子集不一致 */
 const platforms = ref<PlatformVO[]>([])
+/** 系统接口选项（菜单 API 配置多选用） */
+const sysApis = ref<SysApiVO[]>([])
 /** 本页独立选择的管理平台，与 Header 全局平台解耦：直接管理指定平台的菜单 */
 const selectedPlatform = ref(appStore.currentPlatform || '')
 const {
   loading, submitting, tableData, dialogVisible, editForm,
-  fetchData, handleAdd: _handleAdd, handleEdit, handleDelete, handleSubmit,
+  fetchData, handleAdd: _handleAdd, handleEdit: _handleEdit, handleDelete, handleSubmit,
 } = useCrud<MenuDTO>(
   { list: getMenuTree, create: createMenu, update: updateMenu, delete: deleteMenu },
-  { type: 'MODULE', name: '', parent: 0, platform: '', routePath: '', component: '', sort: 0, baseMenu: 0 } as MenuDTO,
+  { type: 'MODULE', name: '', parent: 0, platform: '', icon: '', iconType: 0, routeName: '', routePath: '', component: '', sort: 0, baseMenu: 0, apiList: [] } as MenuDTO,
   { clientSidePagination: false }
 )
 /** 子级类型推断：模块->分组->页面->按钮 */
@@ -190,6 +204,14 @@ function onParentChange(val: any) {
   const parentType = findNodeType(tableData.value, parentId)
   if (parentType) editForm.type = CHILD_TYPE[parentType] || editForm.type || 'MODULE'
 }
+// 编辑：树 row 不含 apiList，查详情回显
+async function handleEdit(row: any) {
+  _handleEdit(row)
+  try {
+    const detail: any = await getMenu(row.id)
+    editForm.apiList = detail?.apiList || []
+  } catch { /* 拉取失败不阻塞 */ }
+}
 // 顶层新建默认带入当前管理平台，避免空 platform 触发后端"平台选择不正确"
 function handleAdd() {
   _handleAdd()
@@ -212,6 +234,10 @@ onMounted(async () => {
   try {
     const res: any = await listPlatforms({ page: 1, size: 1000 })
     platforms.value = res.list || []
+  } catch { /* 拉取失败不阻塞 */ }
+  try {
+    const res: any = await listSysApi({ page: 1, size: 1000 })
+    sysApis.value = res.list || []
   } catch { /* 拉取失败不阻塞 */ }
   if (!selectedPlatform.value) {
     selectedPlatform.value = platforms.value[0]?.code || ''
@@ -240,5 +266,6 @@ function typeTag(t?: string) {
 .module-tabs :deep(.el-tabs__item.is-left) { padding: 0 12px; }
 .menu-table-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; align-self: stretch; }
 .parent-select { width: 100%; }
+.api-select { width: 100%; }
 .tip { margin-left: 8px; font-size: 12px; color: var(--text-tertiary); }
 </style>

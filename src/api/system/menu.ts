@@ -8,7 +8,7 @@ export interface MenuDTO {
   parent?: number
   platform?: string
   icon?: string
-  iconType?: string
+  iconType?: number
   routeName?: string
   routePath?: string
   component?: string
@@ -28,3 +28,14 @@ export const deleteMenu = (id: number) => request({ url: `/admin/sys/menu/del/${
 export const getMenuTree = (params?: any) => request({ url: '/admin/sys/menu/all', method: 'get', params })
 /** 角色已分配菜单 */
 export const getRoleMenus = (roleId: number) => request({ url: '/admin/sys/role/menus', method: 'get', params: { id: roleId } })
+
+/** 系统接口（菜单 API 配置用） */
+export interface SysApiVO {
+  id?: number
+  name?: string
+  module?: string
+  path?: string
+  login?: number
+  remark?: string
+}
+export const listSysApi = (params?: any) => request({ url: '/admin/sys/api', method: 'get', params })
