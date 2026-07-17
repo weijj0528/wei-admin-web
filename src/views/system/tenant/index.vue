@@ -1,72 +1,62 @@
 <template>
-  <div class="page">
-    <SearchBar :model="search" :fields="fields" @search="handleSearch" @reset="handleReset" />
-    <el-card shadow="never">
-      <template #header>
-        <div class="card-header">
-          <span>租户列表</span>
-          <el-button type="primary" :icon="Plus" @click="handleAdd">新建租户</el-button>
-        </div>
-      </template>
-      <el-table :data="tableData" v-loading="loading" stripe height="100%">
-        <el-table-column prop="code" label="租户编码" width="180" />
-        <el-table-column prop="name" label="租户名称" />
-        <el-table-column prop="platform" label="平台" width="140" />
-        <el-table-column prop="adminName" label="管理员" width="120" />
-        <el-table-column label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="row.status === 0 ? 'success' : 'danger'" effect="light">
-              {{ row.status === 0 ? '启用' : '禁用' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="220" fixed="right">
-          <template #default="{ row }">
-            <el-button v-if="row.status !== 0" link type="success" @click="toggle(row, true)">启用</el-button>
-            <el-button v-else link type="warning" @click="toggle(row, false)">禁用</el-button>
-            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
-          </template>
-        </el-table-column>
-        <template #empty><el-empty description="暂无租户" /></template>
-      </el-table>
-      <el-pagination
-        v-model:current-page="pagination.page"
-        v-model:page-size="pagination.size"
-        :total="pagination.total"
-        :page-sizes="[10, 20, 50]"
-        layout="total, sizes, prev, pager, next, jumper"
-        @current-change="handlePageChange"
-        @size-change="handleSizeChange"
-      />
-    </el-card>
-    <el-dialog v-model="dialogVisible" :title="editForm.id ? '编辑租户' : '新建租户'" width="520px">
-      <el-form :model="editForm" label-width="90px">
-        <el-form-item label="租户编码">
-          <el-input v-model="editForm.code" disabled :placeholder="editForm.id ? '' : '保存后自动生成'" />
-        </el-form-item>
-        <el-form-item label="租户名称" required><el-input v-model="editForm.name" /></el-form-item>
-        <el-form-item label="平台" required>
-          <el-select v-model="editForm.platform" placeholder="选择平台" :disabled="!!editForm.id">
-            <el-option v-for="p in platforms" :key="p.code" :label="p.name" :value="p.code" />
-          </el-select>
-        </el-form-item>
-        <template v-if="!editForm.id">
-          <el-form-item label="管理员账号" required>
-            <el-input v-model="editForm.adminName" placeholder="登录账号" />
-          </el-form-item>
-          <el-form-item label="管理员密码" required>
-            <el-input v-model="adminPwdInput" type="password" show-password placeholder="登录密码" />
-          </el-form-item>
+  <ListLayout title="租户列表" :page="pagination" @page-change="handlePageChange" @size-change="handleSizeChange">
+    <template #search>
+      <SearchBar :model="search" :fields="fields" @search="handleSearch" @reset="handleReset" />
+    </template>
+    <template #actions>
+      <el-button type="primary" :icon="Plus" @click="handleAdd">新建租户</el-button>
+    </template>
+    <el-table :data="tableData" v-loading="loading" stripe height="100%">
+      <el-table-column prop="code" label="租户编码" width="180" />
+      <el-table-column prop="name" label="租户名称" />
+      <el-table-column prop="platform" label="平台" width="140" />
+      <el-table-column prop="adminName" label="管理员" width="120" />
+      <el-table-column label="状态" width="100">
+        <template #default="{ row }">
+          <el-tag :type="row.status === 0 ? 'success' : 'danger'" effect="light">
+            {{ row.status === 0 ? '启用' : '禁用' }}
+          </el-tag>
         </template>
-        <el-form-item label="备注"><el-input v-model="editForm.remark" type="textarea" /></el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitting" @click="handleSubmit">确定</el-button>
-      </template>
-    </el-dialog>
-  </div>
+      </el-table-column>
+      <el-table-column label="操作" width="220" fixed="right">
+        <template #default="{ row }">
+          <el-button v-if="row.status !== 0" link type="success" @click="toggle(row, true)">启用</el-button>
+          <el-button v-else link type="warning" @click="toggle(row, false)">禁用</el-button>
+          <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
+          <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+        </template>
+      </el-table-column>
+      <template #empty><el-empty description="暂无租户" /></template>
+    </el-table>
+    <template #dialog>
+      <el-dialog v-model="dialogVisible" :title="editForm.id ? '编辑租户' : '新建租户'" width="520px">
+        <el-form :model="editForm" label-width="90px">
+          <el-form-item label="租户编码">
+            <el-input v-model="editForm.code" disabled :placeholder="editForm.id ? '' : '保存后自动生成'" />
+          </el-form-item>
+          <el-form-item label="租户名称" required><el-input v-model="editForm.name" /></el-form-item>
+          <el-form-item label="平台" required>
+            <el-select v-model="editForm.platform" placeholder="选择平台" :disabled="!!editForm.id">
+              <el-option v-for="p in platforms" :key="p.code" :label="p.name" :value="p.code" />
+            </el-select>
+          </el-form-item>
+          <template v-if="!editForm.id">
+            <el-form-item label="管理员账号" required>
+              <el-input v-model="editForm.adminName" placeholder="登录账号" />
+            </el-form-item>
+            <el-form-item label="管理员密码" required>
+              <el-input v-model="adminPwdInput" type="password" show-password placeholder="登录密码" />
+            </el-form-item>
+          </template>
+          <el-form-item label="备注"><el-input v-model="editForm.remark" type="textarea" /></el-form-item>
+        </el-form>
+        <template #footer>
+          <el-button @click="dialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="submitting" @click="handleSubmit">确定</el-button>
+        </template>
+      </el-dialog>
+    </template>
+  </ListLayout>
 </template>
 
 <script setup lang="ts">
@@ -74,6 +64,7 @@ import { onMounted, ref } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import SearchBar from '@/components/SearchBar.vue'
+import ListLayout from '@/components/ListLayout.vue'
 import { useCrud } from '@/composables/useCrud'
 import { listTenants, createTenant, updateTenant, deleteTenant, enableTenant, disableTenant, type TenantDTO } from '@/api/system/tenant'
 import { listPlatforms } from '@/api/system/platform'
@@ -140,8 +131,3 @@ async function toggle(row: TenantDTO, enable: boolean) {
   } catch { /* request 拦截器已 toast */ }
 }
 </script>
-
-<style scoped>
-.page { display: flex; flex-direction: column; }
-.card-header { display: flex; align-items: center; justify-content: space-between; font-weight: 600; }
-</style>
