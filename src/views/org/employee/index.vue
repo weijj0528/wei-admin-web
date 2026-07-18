@@ -36,6 +36,11 @@
         <el-form-item label="姓名" required><el-input v-model="editForm.name" /></el-form-item>
         <el-form-item label="账号" required><el-input v-model="editForm.userName" /></el-form-item>
         <el-form-item v-if="!editForm.id" label="密码"><el-input v-model="editForm.pwd" type="password" show-password /></el-form-item>
+        <el-form-item label="角色">
+          <el-select v-model="editForm.roles" multiple filterable placeholder="请选择角色" style="width: 100%">
+            <el-option v-for="r in roleOptions" :key="r.id" :label="r.name" :value="r.id" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="备注"><el-input v-model="editForm.remark" type="textarea" /></el-form-item>
       </el-form>
       <template #footer>
@@ -47,23 +52,48 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import SearchBar from '@/components/SearchBar.vue'
 import { useCrud } from '@/composables/useCrud'
-import { listEmployees, createEmployee, updateEmployee, deleteEmployee, type EmployeeDTO } from '@/api/org/employee'
+import { listEmployees, createEmployee, updateEmployee, deleteEmployee, getEmployee, type EmployeeDTO } from '@/api/org/employee'
+import { listRoles } from '@/api/system/role'
 
 const fields = [
   { prop: 'name', label: '姓名' },
   { prop: 'userName', label: '账号' },
 ]
+const roleOptions = ref<any[]>([])
+
 const {
   loading, submitting, tableData, dialogVisible, editForm, search, pagination,
   fetchData, handleSearch, handleReset, handlePageChange, handleSizeChange,
-  handleAdd, handleEdit, handleDelete, handleSubmit,
+  handleAdd: _handleAdd, handleDelete, handleSubmit,
 } = useCrud<EmployeeDTO>(
   { list: listEmployees, create: createEmployee, update: updateEmployee, delete: deleteEmployee },
-  { name: '', userName: '', pwd: '', remark: '' } as EmployeeDTO
+  { name: '', userName: '', pwd: '', remark: '', roles: [] } as EmployeeDTO
 )
+
+async function loadRoleOptions() {
+  try {
+    const res = await listRoles({ currentTenant: true })
+    roleOptions.value = Array.isArray(res) ? res : (res.list || res.records || [])
+  } catch { roleOptions.value = [] }
+}
+
+function handleAdd() {
+  _handleAdd()
+  loadRoleOptions()
+}
+
+async function handleEdit(row: any) {
+  // 编辑时先拉详情（含 roles 回显），再打开对话框
+  const detail = await getEmployee(row.id)
+  Object.assign(editForm, { name: '', userName: '', pwd: '', remark: '', roles: [] }, detail)
+  dialogVisible.value = true
+  loadRoleOptions()
+}
+
 fetchData()
 </script>
 
