@@ -1,7 +1,7 @@
 <template>
   <ListLayout title="部门树" :page="pagination" hide-pagination>
     <template #actions>
-      <el-button type="primary" :icon="Plus" @click="handleAdd">新建部门</el-button>
+      <el-button v-permission="['org:department:save']" type="primary" :icon="Plus" @click="handleAdd">新建部门</el-button>
     </template>
     <el-table
       :data="tableData"
@@ -17,9 +17,9 @@
       <el-table-column prop="remark" label="备注" show-overflow-tooltip />
       <el-table-column label="操作" width="220" fixed="right">
         <template #default="{ row }">
-          <el-button link type="success" @click="handleAddChild(row)">新增子级</el-button>
-          <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-          <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+          <el-button v-permission="['org:department:save']" link type="success" @click="handleAddChild(row)">新增子级</el-button>
+          <el-button v-permission="['org:department:update']" link type="primary" @click="handleEdit(row)">编辑</el-button>
+          <el-button v-permission="['org:department:delete']" link type="danger" @click="handleDelete(row)">删除</el-button>
         </template>
       </el-table-column>
       <template #empty><el-empty description="暂无部门" /></template>

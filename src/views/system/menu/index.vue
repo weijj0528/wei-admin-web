@@ -14,7 +14,7 @@
               <template #prefix><el-icon><Grid /></el-icon></template>
               <el-option v-for="p in platforms" :key="p.code" :label="p.name" :value="p.code" />
             </el-select>
-            <el-button type="primary" :icon="Plus" @click="handleAdd">新建菜单</el-button>
+            <el-button v-permission="['system:menu:save']" type="primary" :icon="Plus" @click="handleAdd">新建菜单</el-button>
           </div>
         </div>
       </template>
@@ -54,9 +54,9 @@
             </el-table-column>
             <el-table-column label="操作" width="220" fixed="right">
               <template #default="{ row }">
-                <el-button v-if="row.type !== 'FUNC'" link type="success" @click="handleAddChild(row)">新增子级</el-button>
-                <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-                <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+                <el-button v-if="row.type !== 'FUNC'" v-permission="['system:menu:save']" link type="success" @click="handleAddChild(row)">新增子级</el-button>
+                <el-button v-permission="['system:menu:update']" link type="primary" @click="handleEdit(row)">编辑</el-button>
+                <el-button v-permission="['system:menu:delete']" link type="danger" @click="handleDelete(row)">删除</el-button>
               </template>
             </el-table-column>
             <template #empty><el-empty description="暂无菜单" /></template>

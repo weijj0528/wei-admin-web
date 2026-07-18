@@ -4,7 +4,7 @@
       <SearchBar :model="search" :fields="fields" @search="handleSearch" @reset="handleReset" />
     </template>
     <template #actions>
-      <el-button type="primary" :icon="Plus" @click="handleAdd">新建用户</el-button>
+      <el-button v-permission="['user:save']" type="primary" :icon="Plus" @click="handleAdd">新建用户</el-button>
     </template>
     <el-table :data="tableData" v-loading="loading" stripe height="100%">
       <el-table-column prop="name" label="用户名" width="140" />
@@ -19,12 +19,12 @@
       </el-table-column>
       <el-table-column label="操作" width="260" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-          <el-button link :type="row.freeze === 0 ? 'warning' : 'success'" @click="handleFreeze(row)">
+          <el-button v-permission="['user:update']" link type="primary" @click="handleEdit(row)">编辑</el-button>
+          <el-button v-permission="['user:freeze']" link :type="row.freeze === 0 ? 'warning' : 'success'" @click="handleFreeze(row)">
             {{ row.freeze === 0 ? '冻结' : '解冻' }}
           </el-button>
-          <el-button link type="warning" @click="handleResetPwd(row)">重置密码</el-button>
-          <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+          <el-button v-permission="['user:resetPwd']" link type="warning" @click="handleResetPwd(row)">重置密码</el-button>
+          <el-button v-permission="['user:delete']" link type="danger" @click="handleDelete(row)">删除</el-button>
         </template>
       </el-table-column>
       <template #empty><el-empty description="暂无用户" /></template>

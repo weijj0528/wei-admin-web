@@ -21,8 +21,6 @@ export const vPermission: Directive = {
     const required = binding.value as string[]
     if (!required || required.length === 0) return
     const buttons = getButtons()
-    // 无权限数据时不限制（开发模式 / 超级管理员未配置 routeName）
-    if (buttons.length === 0) return
     const hasPerm = required.some((p) => buttons.includes(p))
     if (!hasPerm) {
       el.parentNode?.removeChild(el)

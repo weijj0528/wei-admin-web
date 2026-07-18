@@ -4,7 +4,7 @@
       <SearchBar :model="search" :fields="fields" @search="handleSearch" @reset="handleReset" />
     </template>
     <template #actions>
-      <el-button type="primary" :icon="Plus" @click="handleAdd">新建项</el-button>
+      <el-button v-permission="['dict:item:save']" type="primary" :icon="Plus" @click="handleAdd">新建项</el-button>
     </template>
     <el-table :data="tableData" v-loading="loading" stripe height="100%">
       <el-table-column prop="typeCode" label="类型编码" width="150" />
@@ -14,8 +14,8 @@
       <el-table-column prop="sort" label="排序" width="80" />
       <el-table-column label="操作" width="150" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-          <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+          <el-button v-permission="['dict:item:update']" link type="primary" @click="handleEdit(row)">编辑</el-button>
+          <el-button v-permission="['dict:item:delete']" link type="danger" @click="handleDelete(row)">删除</el-button>
         </template>
       </el-table-column>
       <template #empty><el-empty description="暂无字典项" /></template>

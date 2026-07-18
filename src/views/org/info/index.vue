@@ -4,7 +4,7 @@
       <SearchBar :model="search" :fields="fields" @search="handleSearch" @reset="handleReset" />
     </template>
     <template #actions>
-      <el-button type="primary" :icon="Plus" @click="handleAdd">新建机构</el-button>
+      <el-button v-permission="['org:info:save']" type="primary" :icon="Plus" @click="handleAdd">新建机构</el-button>
     </template>
     <el-table :data="tableData" v-loading="loading" stripe height="100%">
       <el-table-column prop="code" label="机构编码" width="160" />
@@ -12,8 +12,8 @@
       <el-table-column prop="remark" label="备注" show-overflow-tooltip />
       <el-table-column label="操作" width="150" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-          <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+          <el-button v-permission="['org:info:update']" link type="primary" @click="handleEdit(row)">编辑</el-button>
+          <el-button v-permission="['org:info:delete']" link type="danger" @click="handleDelete(row)">删除</el-button>
         </template>
       </el-table-column>
       <template #empty><el-empty description="暂无机构" /></template>
