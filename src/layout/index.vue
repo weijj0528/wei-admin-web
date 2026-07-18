@@ -81,6 +81,7 @@ watch(
   flex-shrink: 0;
 }
 .layout-main {
+  position: relative;
   background: var(--bg);
   padding: var(--space-5);
   overflow: auto;

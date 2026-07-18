@@ -157,12 +157,20 @@ fetchData()
 </script>
 
 <style scoped>
-.page { display: flex; gap: 12px; height: 100%; }
-.dept-card { width: 260px; flex-shrink: 0; display: flex; flex-direction: column; }
+.page {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  grid-template-rows: minmax(0, 1fr);
+  gap: 12px;
+  overflow: hidden;
+}
+.dept-card { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
 .dept-card :deep(.el-card__body) { flex: 1; overflow: auto; }
-.main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-.table-card { flex: 1; display: flex; flex-direction: column; }
-.table-card :deep(.el-card__body) { flex: 1; display: flex; flex-direction: column; }
+.main { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
+.table-card { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.table-card :deep(.el-card__body) { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 .card-header { display: flex; align-items: center; justify-content: space-between; font-weight: 600; }
 .card-title { font-weight: 600; }
 </style>
