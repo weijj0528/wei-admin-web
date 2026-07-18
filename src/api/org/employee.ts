@@ -1,7 +1,7 @@
 import { request } from '@/utils/request'
 export interface EmployeeDTO {
   id?: number; userId?: number; userName?: string; pwd?: string
-  code?: string; name?: string; remark?: string; roles?: number[]
+  code?: string; name?: string; remark?: string; roles?: number[]; departments?: number[]
 }
 export const listEmployees = (params?: any) => request({ url: '/admin/org/employee', method: 'get', params })
 export const getEmployee = (id: number) => request({ url: `/admin/org/employee/${id}`, method: 'get' })

@@ -41,6 +41,19 @@
             <el-option v-for="r in roleOptions" :key="r.id" :label="r.name" :value="r.id" />
           </el-select>
         </el-form-item>
+        <el-form-item label="所属部门">
+          <el-tree-select
+            v-model="editForm.departments"
+            :data="deptTree"
+            :props="{ value: 'id', label: 'name', children: 'children' }"
+            multiple
+            check-strictly
+            filterable
+            clearable
+            placeholder="请选择部门"
+            style="width: 100%"
+          />
+        </el-form-item>
         <el-form-item label="备注"><el-input v-model="editForm.remark" type="textarea" /></el-form-item>
       </el-form>
       <template #footer>
@@ -58,12 +71,14 @@ import SearchBar from '@/components/SearchBar.vue'
 import { useCrud } from '@/composables/useCrud'
 import { listEmployees, createEmployee, updateEmployee, deleteEmployee, getEmployee, type EmployeeDTO } from '@/api/org/employee'
 import { listRoles } from '@/api/system/role'
+import { getDepartmentTree } from '@/api/org/department'
 
 const fields = [
   { prop: 'name', label: '姓名' },
   { prop: 'userName', label: '账号' },
 ]
 const roleOptions = ref<any[]>([])
+const deptTree = ref<any[]>([])
 
 const {
   loading, submitting, tableData, dialogVisible, editForm, search, pagination,
@@ -71,7 +86,7 @@ const {
   handleAdd: _handleAdd, handleDelete, handleSubmit,
 } = useCrud<EmployeeDTO>(
   { list: listEmployees, create: createEmployee, update: updateEmployee, delete: deleteEmployee },
-  { name: '', userName: '', pwd: '', remark: '', roles: [] } as EmployeeDTO
+  { name: '', userName: '', pwd: '', remark: '', roles: [], departments: [] } as EmployeeDTO
 )
 
 async function loadRoleOptions() {
@@ -81,17 +96,26 @@ async function loadRoleOptions() {
   } catch { roleOptions.value = [] }
 }
 
+async function loadDeptTree() {
+  try {
+    const res = await getDepartmentTree()
+    deptTree.value = Array.isArray(res) ? res : (res.list || res.records || [])
+  } catch { deptTree.value = [] }
+}
+
 function handleAdd() {
   _handleAdd()
   loadRoleOptions()
+  loadDeptTree()
 }
 
 async function handleEdit(row: any) {
-  // 编辑时先拉详情（含 roles 回显），再打开对话框
+  // 编辑时先拉详情（含 roles/departments 回显），再打开对话框
   const detail = await getEmployee(row.id)
-  Object.assign(editForm, { name: '', userName: '', pwd: '', remark: '', roles: [] }, detail)
+  Object.assign(editForm, { name: '', userName: '', pwd: '', remark: '', roles: [], departments: [] }, detail)
   dialogVisible.value = true
   loadRoleOptions()
+  loadDeptTree()
 }
 
 fetchData()
