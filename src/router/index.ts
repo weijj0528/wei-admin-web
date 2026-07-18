@@ -22,7 +22,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'system/role', name: 'Role', component: () => import('@/views/system/role/index.vue'), meta: { title: '角色管理' } },
       { path: 'system/api', name: 'Api', component: () => import('@/views/system/api/index.vue'), meta: { title: '接口管理' } },
       // P1 组织管理
-      { path: 'org/info', name: 'OrgInfo', component: () => import('@/views/org/info/index.vue'), meta: { title: '机构管理' } },
+      { path: 'org/info', name: 'OrgInfo', component: () => import('@/views/org/info/index.vue'), meta: { title: '机构信息' } },
       { path: 'org/department', name: 'Department', component: () => import('@/views/org/department/index.vue'), meta: { title: '部门管理' } },
       { path: 'org/employee', name: 'Employee', component: () => import('@/views/org/employee/index.vue'), meta: { title: '员工管理' } },
       { path: 'org/role', name: 'OrgRole', component: () => import('@/views/org/role/index.vue'), meta: { title: '角色管理' } },
