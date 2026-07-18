@@ -1,36 +1,52 @@
 <template>
   <div class="page">
-    <SearchBar :model="search" :fields="fields" @search="handleSearch" @reset="handleReset" />
-    <el-card shadow="never">
-      <template #header>
-        <div class="card-header">
-          <span>员工列表</span>
-          <el-button v-permission="['org:employee:save']" type="primary" :icon="Plus" @click="handleAdd">新建员工</el-button>
-        </div>
-      </template>
-      <el-table :data="tableData" v-loading="loading" stripe height="100%">
-        <el-table-column prop="code" label="员工编码" width="120" />
-        <el-table-column prop="name" label="姓名" />
-        <el-table-column prop="userName" label="账号" />
-        <el-table-column prop="remark" label="备注" show-overflow-tooltip />
-        <el-table-column label="操作" width="150" fixed="right">
-          <template #default="{ row }">
-            <el-button v-permission="['org:employee:update']" link type="primary" @click="handleEdit(row)">编辑</el-button>
-            <el-button v-permission="['org:employee:delete']" link type="danger" @click="handleDelete(row)">删除</el-button>
-          </template>
-        </el-table-column>
-        <template #empty><el-empty description="暂无员工" /></template>
-      </el-table>
-      <el-pagination
-        v-model:current-page="pagination.page"
-        v-model:page-size="pagination.size"
-        :total="pagination.total"
-        :page-sizes="[10, 20, 50]"
-        layout="total, sizes, prev, pager, next, jumper"
-        @current-change="handlePageChange"
-        @size-change="handleSizeChange"
+    <el-card class="dept-card" shadow="never">
+      <template #header><span class="card-title">部门</span></template>
+      <el-input v-model="deptFilter" placeholder="搜索部门" clearable size="small" style="margin-bottom: 8px" />
+      <el-tree
+        ref="treeRef"
+        :data="deptTree"
+        :props="{ label: 'name', children: 'children' }"
+        :filter-node-method="filterDept"
+        node-key="id"
+        highlight-current
+        default-expand-all
+        @node-click="handleDeptClick"
       />
     </el-card>
+    <div class="main">
+      <SearchBar :model="search" :fields="fields" @search="handleSearch" @reset="handleReset" />
+      <el-card shadow="never" class="table-card">
+        <template #header>
+          <div class="card-header">
+            <span>{{ currentDeptName ? `${currentDeptName} - 员工列表` : '员工列表' }}</span>
+            <el-button v-permission="['org:employee:save']" type="primary" :icon="Plus" @click="handleAdd">新建员工</el-button>
+          </div>
+        </template>
+        <el-table :data="tableData" v-loading="loading" stripe height="100%">
+          <el-table-column prop="code" label="员工编码" width="120" />
+          <el-table-column prop="name" label="姓名" />
+          <el-table-column prop="userName" label="账号" />
+          <el-table-column prop="remark" label="备注" show-overflow-tooltip />
+          <el-table-column label="操作" width="150" fixed="right">
+            <template #default="{ row }">
+              <el-button v-permission="['org:employee:update']" link type="primary" @click="handleEdit(row)">编辑</el-button>
+              <el-button v-permission="['org:employee:delete']" link type="danger" @click="handleDelete(row)">删除</el-button>
+            </template>
+          </el-table-column>
+          <template #empty><el-empty description="暂无员工" /></template>
+        </el-table>
+        <el-pagination
+          v-model:current-page="pagination.page"
+          v-model:page-size="pagination.size"
+          :total="pagination.total"
+          :page-sizes="[10, 20, 50]"
+          layout="total, sizes, prev, pager, next, jumper"
+          @current-change="handlePageChange"
+          @size-change="handleSizeChange"
+        />
+      </el-card>
+    </div>
     <el-dialog v-model="dialogVisible" :title="editForm.id ? '编辑员工' : '新建员工'" width="480px">
       <el-form :model="editForm" label-width="80px">
         <el-form-item label="姓名" required><el-input v-model="editForm.name" /></el-form-item>
@@ -65,7 +81,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import SearchBar from '@/components/SearchBar.vue'
 import { useCrud } from '@/composables/useCrud'
@@ -79,6 +95,9 @@ const fields = [
 ]
 const roleOptions = ref<any[]>([])
 const deptTree = ref<any[]>([])
+const deptFilter = ref('')
+const currentDeptName = ref('')
+const treeRef = ref()
 
 const {
   loading, submitting, tableData, dialogVisible, editForm, search, pagination,
@@ -103,25 +122,47 @@ async function loadDeptTree() {
   } catch { deptTree.value = [] }
 }
 
+// 部门树本地过滤
+watch(deptFilter, (val) => {
+  treeRef.value?.filter(val)
+})
+function filterDept(value: string, data: any) {
+  if (!value) return true
+  return data.name?.includes(value)
+}
+
+// 点击部门节点 → 按 departmentId 筛选员工
+function handleDeptClick(data: any) {
+  currentDeptName.value = data.name || ''
+  ;(search as any).departmentId = data.id
+  pagination.page = 1
+  fetchData()
+}
+
 function handleAdd() {
   _handleAdd()
   loadRoleOptions()
-  loadDeptTree()
 }
 
 async function handleEdit(row: any) {
-  // 编辑时先拉详情（含 roles/departments 回显），再打开对话框
   const detail = await getEmployee(row.id)
   Object.assign(editForm, { name: '', userName: '', pwd: '', remark: '', roles: [], departments: [] }, detail)
   dialogVisible.value = true
   loadRoleOptions()
-  loadDeptTree()
 }
 
+// 初始化：加载部门树 + 员工列表
+loadDeptTree()
 fetchData()
 </script>
 
 <style scoped>
-.page { display: flex; flex-direction: column; }
+.page { display: flex; gap: 12px; height: 100%; }
+.dept-card { width: 260px; flex-shrink: 0; display: flex; flex-direction: column; }
+.dept-card :deep(.el-card__body) { flex: 1; overflow: auto; }
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.table-card { flex: 1; display: flex; flex-direction: column; }
+.table-card :deep(.el-card__body) { flex: 1; display: flex; flex-direction: column; }
 .card-header { display: flex; align-items: center; justify-content: space-between; font-weight: 600; }
+.card-title { font-weight: 600; }
 </style>
