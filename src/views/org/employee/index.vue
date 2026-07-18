@@ -158,13 +158,11 @@ fetchData()
 
 <style scoped>
 .page {
-  position: absolute;
-  inset: 0;
+  flex: 1;
   display: grid;
   grid-template-columns: 260px 1fr;
-  grid-template-rows: minmax(0, 1fr);
   gap: 12px;
-  overflow: hidden;
+  min-height: 0;
 }
 .dept-card { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
 .dept-card :deep(.el-card__body) { flex: 1; overflow: auto; }

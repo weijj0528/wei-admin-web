@@ -81,12 +81,13 @@ watch(
   flex-shrink: 0;
 }
 .layout-main {
-  position: relative;
   background: var(--bg);
   padding: var(--space-5);
   overflow: auto;
   flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 页面切换淡入（轻量） */
