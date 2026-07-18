@@ -131,10 +131,15 @@ function filterDept(value: string, data: any) {
   return data.name?.includes(value)
 }
 
-// 点击部门节点 → 按 departmentId 筛选员工
+// 点击部门节点 → 按 departmentId 筛选员工；根部门不筛选（展示所有员工）
 function handleDeptClick(data: any) {
   currentDeptName.value = data.name || ''
-  ;(search as any).departmentId = data.id
+  if (data.parent === 0 || !data.parent) {
+    // 根部门：清除筛选，展示机构全部员工
+    delete (search as any).departmentId
+  } else {
+    ;(search as any).departmentId = data.id
+  }
   pagination.page = 1
   fetchData()
 }
