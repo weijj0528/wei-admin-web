@@ -186,7 +186,7 @@ const stats = computed(() => [
 
 const quickLinks = [
   { label: '菜单管理', path: '/system/menu', icon: Menu },
-  { label: '角色管理', path: '/system/role', icon: Setting },
+  { label: '系统角色', path: '/system/role', icon: Setting },
   { label: '租户管理', path: '/system/tenant', icon: Platform },
   { label: '员工管理', path: '/org/employee', icon: Grid },
   { label: '机构管理', path: '/org/info', icon: Grid },

@@ -8,8 +8,13 @@
     </template>
     <el-table :data="tableData" v-loading="loading" stripe height="100%">
       <el-table-column prop="code" label="类型编码" width="160" />
-      <el-table-column prop="name" label="类型名称" />
-      <el-table-column prop="remark" label="备注" show-overflow-tooltip />
+      <el-table-column prop="name" label="类型名称" width="160" />
+      <el-table-column prop="dataType" label="数据类型" width="120">
+        <template #default="{ row }">
+          <el-tag :type="dataTypeTagType(row.dataType)" size="small">{{ dataTypeLabel(row.dataType) }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="validationRule" label="校验规则" show-overflow-tooltip />
       <el-table-column label="操作" width="150" fixed="right">
         <template #default="{ row }">
           <el-button v-permission="['dict:type:update']" link type="primary" @click="handleEdit(row)">编辑</el-button>
@@ -19,10 +24,30 @@
       <template #empty><el-empty description="暂无字典类型" /></template>
     </el-table>
     <template #dialog>
-      <el-dialog v-model="dialogVisible" :title="editForm.id ? '编辑类型' : '新建类型'" width="480px">
-        <el-form :model="editForm" label-width="80px">
+      <el-dialog v-model="dialogVisible" :title="editForm.id ? '编辑类型' : '新建类型'" width="600px">
+        <el-form :model="editForm" label-width="100px">
           <el-form-item label="编码" required><el-input v-model="editForm.code" /></el-form-item>
           <el-form-item label="名称" required><el-input v-model="editForm.name" /></el-form-item>
+          <el-form-item label="数据类型">
+            <el-select v-model="editForm.dataType" placeholder="选择数据类型" style="width: 100%">
+              <el-option v-for="opt in dataTypeOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="校验规则">
+            <template v-if="editForm.dataType === 'OBJECT'">
+              <el-input v-model="editForm.validationRule" type="textarea" :rows="6"
+                placeholder='JSON Schema，例如：{"type":"object","required":["name"],"properties":{"name":{"type":"string"}}}' />
+              <div v-if="schemaError" style="color: #f56c6c; font-size: 12px; margin-top: 4px">{{ schemaError }}</div>
+            </template>
+            <template v-else>
+              <el-input v-model="editForm.validationRule" placeholder="正则表达式，例如 ^\d+$" />
+              <div class="regex-presets">
+                <span class="preset-label">常用：</span>
+                <el-tag v-for="p in regexPresets" :key="p.value" size="small" class="preset-tag"
+                  effect="plain" @click="editForm.validationRule = p.value">{{ p.label }}</el-tag>
+              </div>
+            </template>
+          </el-form-item>
           <el-form-item label="备注"><el-input v-model="editForm.remark" type="textarea" /></el-form-item>
         </el-form>
         <template #footer>
@@ -35,23 +60,79 @@
 </template>
 
 <script setup lang="ts">
+import { ref, watch } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import SearchBar from '@/components/SearchBar.vue'
 import ListLayout from '@/components/ListLayout.vue'
 import { useCrud } from '@/composables/useCrud'
 import { listDictTypes, createDictType, updateDictType, deleteDictType, type DictTypeDTO } from '@/api/dict'
 
+const dataTypeOptions = [
+  { value: 'STRING', label: '字符串' },
+  { value: 'NUMBER', label: '数字' },
+  { value: 'BOOLEAN', label: '布尔' },
+  { value: 'DATE', label: '日期' },
+  { value: 'TIME', label: '时间' },
+  { value: 'DATETIME', label: '日期时间' },
+  { value: 'OBJECT', label: '对象(JSON)' },
+]
+
+const dataTypeLabel = (t?: string) => dataTypeOptions.find(o => o.value === t)?.label ?? t ?? '字符串'
+
+const dataTypeTagType = (t: string) => {
+  const map: Record<string, string> = { STRING: '', NUMBER: 'success', BOOLEAN: 'warning', DATE: 'info', TIME: 'info', DATETIME: 'info', OBJECT: 'danger' }
+  return (map[t] ?? '') as any
+}
+
+const regexPresets = [
+  { label: '纯数字', value: '^\\d+$' },
+  { label: '字母数字', value: '^[a-zA-Z0-9]+$' },
+  { label: '邮箱', value: '^[\\w.+-]+@[\\w-]+\\.[a-zA-Z]{2,}$' },
+  { label: '手机号', value: '^1[3-9]\\d{9}$' },
+  { label: 'URL', value: '^https?://.+' },
+  { label: '布尔值', value: '^(true|false|0|1)$' },
+  { label: '日期', value: '^\\d{4}-\\d{2}-\\d{2}$' },
+  { label: '时间', value: '^\\d{2}:\\d{2}(:\\d{2})?$' },
+  { label: '日期时间', value: '^\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}' },
+  { label: '整数(含负)', value: '^-?\\d+$' },
+  { label: '小数', value: '^-?\\d+(\\.\\d+)?$' },
+]
+
 const fields = [
   { prop: 'name', label: '名称' },
   { prop: 'code', label: '编码' },
 ]
+
 const {
   loading, submitting, tableData, dialogVisible, editForm, search, pagination,
   fetchData, handleSearch, handleReset, handlePageChange, handleSizeChange,
   handleAdd, handleEdit, handleDelete, handleSubmit,
 } = useCrud<DictTypeDTO>(
   { list: listDictTypes, create: createDictType, update: updateDictType, delete: deleteDictType },
-  { code: '', name: '', remark: '' } as DictTypeDTO
+  { id: undefined, code: '', name: '', remark: '', dataType: 'STRING', validationRule: '' } as DictTypeDTO
 )
+
+const schemaError = ref('')
+watch(() => editForm.validationRule, (val) => {
+  schemaError.value = ''
+  if (editForm.dataType === 'OBJECT' && val) {
+    try { JSON.parse(val) } catch (e: any) { schemaError.value = 'JSON 格式错误: ' + e.message }
+  }
+})
+watch(() => editForm.dataType, () => { schemaError.value = '' })
+
 fetchData()
 </script>
+
+<style scoped>
+.regex-presets {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+.preset-label { font-size: 12px; color: #909399; }
+.preset-tag { cursor: pointer; }
+.preset-tag:hover { color: var(--el-color-primary); border-color: var(--el-color-primary); }
+</style>

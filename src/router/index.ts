@@ -19,7 +19,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'system/platform', name: 'Platform', component: () => import('@/views/system/platform/index.vue'), meta: { title: '平台管理' } },
       { path: 'system/tenant', name: 'Tenant', component: () => import('@/views/system/tenant/index.vue'), meta: { title: '租户管理' } },
       { path: 'system/menu', name: 'Menu', component: () => import('@/views/system/menu/index.vue'), meta: { title: '菜单管理' } },
-      { path: 'system/role', name: 'Role', component: () => import('@/views/system/role/index.vue'), meta: { title: '角色管理' } },
+      { path: 'system/role', name: 'Role', component: () => import('@/views/system/role/index.vue'), meta: { title: '系统角色' } },
       { path: 'system/api', name: 'Api', component: () => import('@/views/system/api/index.vue'), meta: { title: '接口管理' } },
       // P1 组织管理
       { path: 'org/info', name: 'OrgInfo', component: () => import('@/views/org/info/index.vue'), meta: { title: '机构信息' } },
@@ -30,7 +30,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'user', name: 'User', component: () => import('@/views/user/index.vue'), meta: { title: '用户管理' } },
       // P2 字典与日志
       { path: 'dict/type', name: 'DictType', component: () => import('@/views/dict/type.vue'), meta: { title: '字典类型' } },
-      { path: 'dict/item', name: 'DictItem', component: () => import('@/views/dict/item.vue'), meta: { title: '字典项' } },
+      { path: 'dict/item', name: 'DictItem', component: () => import('@/views/dict/item.vue'), meta: { title: '字典列表' } },
       { path: 'operationLog', name: 'OperationLog', component: () => import('@/views/operationLog/index.vue'), meta: { title: '操作日志' } },
       // 子应用路由（wujie 容器）：/platform/{code}/* → PlatformContainer 加载对应子应用
       { path: 'platform/:platformCode/:pathMatch(.*)*', name: 'PlatformContainer', component: () => import('@/layout/PlatformContainer.vue'), meta: { title: '子应用' } }
