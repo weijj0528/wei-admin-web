@@ -3,13 +3,13 @@
     <template #header>
       <div class="card-header">
         <span class="card-title">机构信息</span>
-        <template v-if="editForm.id">
+        <div v-if="editForm.id" class="card-actions">
           <template v-if="editing">
             <el-button @click="cancelEdit">取消</el-button>
             <el-button v-permission="['org:info:update']" type="primary" :loading="submitting" @click="handleSave">保存</el-button>
           </template>
           <el-button v-else v-permission="['org:info:update']" type="primary" @click="editing = true">编辑</el-button>
-        </template>
+        </div>
       </div>
     </template>
     <el-form
@@ -83,4 +83,5 @@ onMounted(loadOrg)
 .page { height: 100%; }
 .card-header { display: flex; align-items: center; justify-content: space-between; }
 .card-title { font-weight: 600; }
+.card-actions { display: flex; gap: 8px; }
 </style>
