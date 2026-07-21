@@ -2,10 +2,7 @@
   <div class="sidebar">
     <div class="logo">
       <div class="logo-mark">
-        <span class="logo-dot" />
-        <span class="logo-bracket">{</span>
-        <span class="logo-w">w</span>
-        <span class="logo-bracket">}</span>
+        <WMark />
       </div>
       <span v-if="!appStore.sidebarCollapsed" class="logo-text">wei·console</span>
     </div>
@@ -38,6 +35,7 @@ import { useRoute } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { useAppStore } from '@/store/app'
 import SidebarItem from './SidebarItem.vue'
+import WMark from '@/components/WMark.vue'
 
 const route = useRoute()
 const userStore = useUserStore()
@@ -118,36 +116,9 @@ watch(() => userStore.currentModuleId, updateCursor, { flush: 'post' })
   overflow: hidden;
 }
 .logo-mark {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 1px;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 15px;
+  width: 28px;
+  height: 28px;
   color: var(--deep-text);
-  letter-spacing: 0;
-}
-.logo-dot {
-  position: absolute;
-  left: -10px;
-  top: 6px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 8px var(--accent), 0 0 16px rgba(245, 176, 66, 0.5);
-  animation: pulse 2.4s ease-in-out infinite;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.55; transform: scale(0.8); }
-}
-.logo-bracket { color: var(--deep-text-mute); }
-.logo-w {
-  color: #fff;
-  font-style: italic;
-  font-weight: 800;
 }
 .logo-text {
   font-size: 15px;

@@ -8,13 +8,9 @@
       <div class="bg-orbit" aria-hidden="true" />
 
       <div class="brand-content">
-        <!-- 纯 CSS 几何徽标：w 在方框里 + 琥珀点 -->
+        <!-- SVG 品牌标记 -->
         <div class="brand-mark" aria-hidden="true">
-          <span class="ring ring-outer" />
-          <span class="ring ring-inner" />
-          <span class="mark-dot" />
-          <span class="mark-w">{ w }</span>
-          <span class="mark-caret" />
+          <WMark />
         </div>
 
         <p class="brand-eyebrow">
@@ -109,6 +105,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { User, Lock } from '@element-plus/icons-vue'
 import { ElMessage, type FormInstance } from 'element-plus'
 import { useUserStore } from '@/store/user'
+import WMark from '@/components/WMark.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -226,80 +223,12 @@ async function handleLogin() {
   max-width: 460px;
 }
 
-/* 几何徽标 */
+/* SVG 品牌标记 */
 .brand-mark {
-  position: relative;
-  width: 68px;
-  height: 68px;
+  width: 72px;
+  height: 72px;
   margin-bottom: var(--space-7);
-  font-family: var(--font-mono);
-}
-.ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 12px;
-  border: 1px solid rgba(59, 91, 255, 0.5);
-}
-.ring-outer {
-  transform: rotate(0deg);
-}
-.ring-outer::before,
-.ring-outer::after {
-  content: '';
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  background: var(--brand);
-  border-radius: 50%;
-}
-.ring-outer::before { top: -3px; left: 12px; box-shadow: 0 0 8px var(--brand); }
-.ring-outer::after { bottom: -3px; right: 12px; box-shadow: 0 0 8px var(--brand); }
-.ring-inner {
-  inset: 10px;
-  border-color: rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  background: linear-gradient(135deg, rgba(59, 91, 255, 0.12), rgba(245, 176, 66, 0.04));
-}
-.mark-dot {
-  position: absolute;
-  top: 18px;
-  left: 18px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 12px var(--accent), 0 0 24px rgba(245, 176, 66, 0.6);
-  animation: blink 2s ease-in-out infinite;
-}
-@keyframes blink {
-  0%, 92%, 100% { opacity: 1; }
-  95% { opacity: 0.3; }
-}
-.mark-w {
-  position: absolute;
-  inset: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-  font-weight: 800;
-  font-style: italic;
   color: #fff;
-  letter-spacing: -1px;
-  padding-left: 8px; /* 给点留位 */
-}
-.mark-caret {
-  position: absolute;
-  right: 14px;
-  bottom: 18px;
-  width: 2px;
-  height: 14px;
-  background: var(--accent);
-  animation: caret 1.1s steps(2) infinite;
-  box-shadow: 0 0 8px var(--accent);
-}
-@keyframes caret {
-  50% { opacity: 0; }
 }
 
 .brand-eyebrow {

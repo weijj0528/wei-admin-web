@@ -21,9 +21,7 @@
       </div>
       <div class="hero-side">
         <div class="brand-mark-sm" aria-hidden="true">
-          <span class="bm-ring" />
-          <span class="bm-dot" />
-          <span class="bm-w">{ w }</span>
+          <WMark />
         </div>
       </div>
     </header>
@@ -124,6 +122,7 @@ import {
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
 import { useAppStore } from '@/store/app'
+import WMark from '@/components/WMark.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -298,34 +297,10 @@ const quickLinks = [
 
 /* 小徽标（hero 右侧） */
 .brand-mark-sm {
-  position: relative;
   width: 64px;
   height: 64px;
-  font-family: var(--font-mono);
-}
-.bm-ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: linear-gradient(135deg, var(--surface) 0%, var(--gray-50) 100%);
-}
-.bm-dot {
-  position: absolute;
-  top: 10px; left: 10px;
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 10px var(--accent);
-}
-.bm-w {
-  position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 800;
-  font-style: italic;
-  font-size: 22px;
+  padding: 10px;
   color: var(--brand);
-  letter-spacing: -1px;
 }
 
 /* ========== Stats ========== */
