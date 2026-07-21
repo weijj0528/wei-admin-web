@@ -103,9 +103,30 @@
         <el-form-item v-else label="路由"><el-input v-model="editForm.routePath" placeholder="如 /system/platform" /></el-form-item>
         <el-form-item label="组件"><el-input v-model="editForm.component" /></el-form-item>
         <el-form-item label="API接口">
-          <el-select v-model="editForm.apiList" multiple filterable clearable placeholder="选择需要的接口" class="api-select">
-            <el-option v-for="a in sysApis" :key="a.id" :label="`${a.name}(${a.path})`" :value="a.id" />
-          </el-select>
+          <div class="api-select-wrap">
+            <el-select v-model="editForm.apiList" multiple filterable clearable placeholder="选择需要的接口" class="api-select">
+              <el-option v-for="a in sysApis" :key="a.id" :label="`${a.name}(${a.path})`" :value="a.id" />
+            </el-select>
+            <div class="api-recommend-bar">
+              <el-tooltip
+                :disabled="canRecommend"
+                :content="recommendDisabledReason"
+                placement="top"
+              >
+                <span>
+                  <el-button
+                    size="small"
+                    type="primary"
+                    plain
+                    :loading="recommendingApi"
+                    :disabled="!canRecommend"
+                    @click="handleRecommendApis"
+                  >按菜单推荐</el-button>
+                </span>
+              </el-tooltip>
+              <span class="tip">根据菜单路由前缀匹配可关联的接口，追加到已选</span>
+            </div>
+          </div>
         </el-form-item>
         <el-form-item label="排序"><el-input-number v-model="editForm.sort" :min="0" /></el-form-item>
         <el-form-item label="基础菜单">
@@ -124,9 +145,10 @@
 <script setup lang="ts">
 import { Plus, Grid, Search } from '@element-plus/icons-vue'
 import { ref, computed, watch, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 import { useCrud } from '@/composables/useCrud'
 import { useAppStore } from '@/store/app'
-import { createMenu, updateMenu, deleteMenu, getMenuTree, getMenu, listSysApi, type MenuDTO, type SysApiVO } from '@/api/system/menu'
+import { createMenu, updateMenu, deleteMenu, getMenuTree, getMenu, listSysApi, recommendMenuApis, type MenuDTO, type SysApiVO } from '@/api/system/menu'
 import { listPlatforms } from '@/api/system/platform'
 import type { PlatformVO } from '@/api/auth'
 import IconPicker from '@/components/IconPicker.vue'
@@ -281,6 +303,49 @@ function typeLabel(t?: string) {
 function typeTag(t?: string) {
   return ({ MODULE: 'primary', GROUP: 'success', PAGE: 'info', FUNC: 'warning' }[t || ''] || 'info') as any
 }
+
+// -------- 按菜单推荐 API --------
+const recommendingApi = ref(false)
+/** 未保存的菜单没有 id，无法调后端推荐；仅 PAGE / FUNC 承载具体接口 */
+const canRecommend = computed(() => {
+  if (!editForm.id) return false
+  return editForm.type === 'PAGE' || editForm.type === 'FUNC'
+})
+const recommendDisabledReason = computed(() => {
+  if (!editForm.id) return '请先保存菜单再执行推荐'
+  if (editForm.type !== 'PAGE' && editForm.type !== 'FUNC') return '仅页面/功能类型的菜单支持推荐接口'
+  return ''
+})
+async function handleRecommendApis() {
+  if (!editForm.id) return
+  recommendingApi.value = true
+  try {
+    const res: any = await recommendMenuApis(editForm.id as number)
+    const list: SysApiVO[] = (res as SysApiVO[]) || []
+    if (!list.length) {
+      ElMessage.info('未匹配到可推荐的接口，请手动选择或调整菜单 routePath')
+      return
+    }
+    // 未在下拉全量接口列表中的选项补齐，避免 el-select 无法显示 label
+    const existingIds = new Set(sysApis.value.map(a => a.id))
+    for (const api of list) {
+      if (api.id && !existingIds.has(api.id)) sysApis.value.push(api)
+    }
+    // 合并去重（追加语义，不覆盖用户已选）
+    const current = new Set<number>((editForm.apiList || []) as number[])
+    let added = 0
+    for (const api of list) {
+      if (api.id && !current.has(api.id)) {
+        current.add(api.id)
+        added++
+      }
+    }
+    editForm.apiList = Array.from(current)
+    ElMessage.success(added > 0 ? `已追加 ${added} 个推荐接口` : '推荐接口均已选择，无需追加')
+  } finally {
+    recommendingApi.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -297,5 +362,7 @@ function typeTag(t?: string) {
 .menu-table-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; align-self: stretch; }
 .parent-select { width: 100%; }
 .api-select { width: 100%; }
+.api-select-wrap { width: 100%; display: flex; flex-direction: column; gap: 6px; }
+.api-recommend-bar { display: flex; align-items: center; gap: 8px; }
 .tip { margin-left: 8px; font-size: 12px; color: var(--text-tertiary); }
 </style>

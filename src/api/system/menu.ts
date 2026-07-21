@@ -39,3 +39,7 @@ export interface SysApiVO {
   remark?: string
 }
 export const listSysApi = (params?: any) => request({ url: '/admin/sys/api', method: 'get', params })
+
+/** 按菜单推荐可关联的 API 接口（后端根据 routePath 前缀匹配，排除已挂载）。 */
+export const recommendMenuApis = (menuId: number) =>
+  request<SysApiVO[]>({ url: `/admin/sys/menu/recommendApis/${menuId}`, method: 'get' })

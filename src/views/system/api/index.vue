@@ -4,8 +4,10 @@
       <SearchBar :model="search" :fields="fields" @search="handleSearch" @reset="handleReset" />
     </template>
     <template #actions>
-      <el-button v-permission="['system:api:save']" type="primary" :icon="Plus" @click="handleAdd">新建接口</el-button>
-      <el-button v-permission="['system:api:scan']" type="warning" :icon="Refresh" :loading="scanning" @click="openScanDialog">扫描注册</el-button>
+      <div class="header-actions">
+        <el-button v-permission="['system:api:scan']" type="warning" :icon="Refresh" :loading="scanning" @click="openScanDialog">扫描注册</el-button>
+        <el-button v-permission="['system:api:save']" type="primary" :icon="Plus" @click="handleAdd">新建接口</el-button>
+      </div>
     </template>
     <el-table :data="tableData" v-loading="loading" stripe height="100%">
       <el-table-column prop="name" label="接口名称" min-width="140" />
@@ -18,9 +20,8 @@
         </template>
       </el-table-column>
       <el-table-column prop="remark" label="备注" min-width="140" show-overflow-tooltip />
-      <el-table-column label="操作" width="220" fixed="right">
+      <el-table-column label="操作" width="160" fixed="right">
         <template #default="{ row }">
-          <el-button v-permission="['system:api:associate']" link type="primary" @click="openAssociateDrawer(row)">关联菜单</el-button>
           <el-button v-permission="['system:api:update']" link type="primary" @click="handleEdit(row)">编辑</el-button>
           <el-button v-permission="['system:api:delete']" link type="danger" @click="handleDelete(row)">删除</el-button>
         </template>
@@ -75,46 +76,12 @@
           <el-button type="primary" :loading="scanning" @click="handleScan">开始扫描</el-button>
         </template>
       </el-dialog>
-
-      <!-- 关联菜单 -->
-      <el-drawer v-model="associateDrawerVisible" :title="`关联菜单 — ${associateApi?.name || ''}`" size="520px">
-        <div v-if="associateApi" class="associate-header">
-          <el-tag>{{ associateApi.path }}</el-tag>
-          <el-tag type="info" style="margin-left: 8px;">模块：{{ associateApi.module || '-' }}</el-tag>
-        </div>
-        <el-divider />
-        <div class="associate-actions">
-          <el-alert type="info" :closable="false" show-icon>
-            系统根据 API 所属模块推荐同平台的 <b>FUNC</b> 菜单。勾选后点「关联所选」即可批量挂载；已挂载的重复请求会自动跳过。
-          </el-alert>
-        </div>
-        <el-table
-          :data="recommendList"
-          v-loading="recommendLoading"
-          style="margin-top: 12px;"
-          height="calc(100vh - 320px)"
-          @selection-change="onRecommendSelectionChange"
-        >
-          <el-table-column type="selection" width="42" />
-          <el-table-column prop="menuName" label="菜单名称" show-overflow-tooltip />
-          <el-table-column prop="parentMenuName" label="父级" width="120" show-overflow-tooltip />
-          <el-table-column prop="menuType" label="类型" width="80" />
-          <template #empty><el-empty description="暂无推荐菜单" /></template>
-        </el-table>
-        <template #footer>
-          <div style="display: flex; justify-content: flex-end; gap: 8px;">
-            <el-button @click="associateDrawerVisible = false">关闭</el-button>
-            <el-button type="danger" :disabled="!selectedRecommendIds.length" :loading="associating" @click="handleDisassociate">解除所选</el-button>
-            <el-button type="primary" :disabled="!selectedRecommendIds.length" :loading="associating" @click="handleAssociate">关联所选</el-button>
-          </div>
-        </template>
-      </el-drawer>
     </template>
   </ListLayout>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh } from '@element-plus/icons-vue'
 import SearchBar from '@/components/SearchBar.vue'
@@ -122,8 +89,8 @@ import ListLayout from '@/components/ListLayout.vue'
 import { useCrud } from '@/composables/useCrud'
 import {
   listApis, createApi, updateApi, deleteApi,
-  scanApis, associateApis, disassociateApis, recommendMenus,
-  type ApiDTO, type RegisterResult, type MenuRecommend,
+  scanApis,
+  type ApiDTO, type RegisterResult,
 } from '@/api/system/api'
 
 const fields = [
@@ -189,83 +156,16 @@ function actionTagType(action: string): 'success' | 'warning' | 'info' {
   return 'info'
 }
 
-// -------- 关联菜单 --------
-const associateDrawerVisible = ref(false)
-const associateApi = ref<ApiDTO | null>(null)
-const recommendList = ref<MenuRecommend[]>([])
-const recommendLoading = ref(false)
-const selectedRecommendIds = ref<number[]>([])
-const associating = ref(false)
-
-function openAssociateDrawer(row: ApiDTO) {
-  associateApi.value = row
-  associateDrawerVisible.value = true
-}
-
-watch(associateDrawerVisible, async (visible) => {
-  if (!visible) {
-    recommendList.value = []
-    selectedRecommendIds.value = []
-    return
-  }
-  if (!associateApi.value?.id) return
-  recommendLoading.value = true
-  try {
-    const res: any = await recommendMenus(associateApi.value.id)
-    recommendList.value = (res as MenuRecommend[]) || []
-  } finally {
-    recommendLoading.value = false
-  }
-})
-
-function onRecommendSelectionChange(rows: MenuRecommend[]) {
-  selectedRecommendIds.value = rows.map(r => r.menuId).filter(Boolean) as number[]
-}
-
-async function handleAssociate() {
-  if (!associateApi.value?.id || selectedRecommendIds.value.length === 0) return
-  const apiId = associateApi.value.id
-  associating.value = true
-  try {
-    await Promise.all(
-      selectedRecommendIds.value.map(menuId => associateApis(menuId, [apiId]))
-    )
-    ElMessage.success(`已关联 ${selectedRecommendIds.value.length} 个菜单`)
-  } finally {
-    associating.value = false
-  }
-}
-
-async function handleDisassociate() {
-  if (!associateApi.value?.id || selectedRecommendIds.value.length === 0) return
-  try {
-    await ElMessageBox.confirm(`将从 ${selectedRecommendIds.value.length} 个菜单上解除本 API 关联，确定继续？`, '解除关联', { type: 'warning' })
-  } catch { return }
-  const apiId = associateApi.value.id
-  associating.value = true
-  try {
-    await Promise.all(
-      selectedRecommendIds.value.map(menuId => disassociateApis(menuId, [apiId]))
-    )
-    ElMessage.success('已解除关联')
-  } finally {
-    associating.value = false
-  }
-}
-
 fetchData()
 </script>
 
 <style scoped>
-.scan-result {
-  margin-top: 16px;
-}
-.associate-header {
+.header-actions {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  gap: 8px;
 }
-.associate-actions {
-  margin-bottom: 4px;
+.scan-result {
+  margin-top: 16px;
 }
 </style>
