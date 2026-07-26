@@ -31,7 +31,8 @@ export function reportError(type: string, message: string, detail?: string) {
     method: 'post',
     data: {
       operation: `[前端-${type}] ${message}`,
-      method: detail || '',
+      // method 列 varchar(128)：传页面路径（简短），避免长 detail/堆栈导致 truncation
+      method: typeof window !== 'undefined' ? window.location.pathname : type,
       status: 1,
       errorMsg: detail
     }
