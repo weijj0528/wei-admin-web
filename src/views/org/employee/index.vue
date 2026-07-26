@@ -152,7 +152,9 @@ function handleAdd() {
 
 async function handleEdit(row: any) {
   const detail = await getEmployee(row.id)
-  Object.assign(editForm, { name: '', userName: '', pwd: '', remark: '', roles: [], departments: [] }, detail)
+  // pwd 追加置空：details 返回的是哈希，回传会被后端 decodeAndEncode 腐蚀；
+  // 编辑表单不展示密码字段，故始终清空，避免误传。
+  Object.assign(editForm, { name: '', userName: '', pwd: '', remark: '', roles: [], departments: [] }, detail, { pwd: '' })
   dialogVisible.value = true
   loadRoleOptions()
 }
