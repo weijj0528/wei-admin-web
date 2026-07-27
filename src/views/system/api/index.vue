@@ -96,6 +96,7 @@ import {
 const fields = [
   { prop: 'name', label: '名称' },
   { prop: 'module', label: '模块' },
+  { prop: 'path', label: '地址' },
 ]
 
 const {
