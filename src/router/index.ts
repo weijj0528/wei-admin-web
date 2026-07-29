@@ -14,7 +14,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/layout/index.vue'),
     redirect: '/home',
     children: [
-      { path: 'home', name: 'Home', component: () => import('@/views/home/index.vue'), meta: { title: '首页' } },
+      { path: 'home', name: 'Home', component: () => import('@/views/home/HomeContainer.vue'), meta: { title: '首页' } },
       // P0 系统管理
       { path: 'system/platform', name: 'Platform', component: () => import('@/views/system/platform/index.vue'), meta: { title: '平台管理' } },
       { path: 'system/tenant', name: 'Tenant', component: () => import('@/views/system/tenant/index.vue'), meta: { title: '租户管理' } },
