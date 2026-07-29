@@ -267,6 +267,19 @@ button { font-family: inherit; }
 .el-select .el-input.is-focus .el-input__wrapper {
   box-shadow: 0 0 0 1px var(--brand) inset, var(--shadow-glow) !important;
 }
+/* 自动填充：Chrome 会给 input 强加淡蓝背景(#E8F0FE)且 !important 无法用
+   background-color 覆盖。用超大 inset box-shadow 盖成面板同色(var(--surface))，
+   配合 5000s transition 冻结变色。EP 默认 wrapper 上下 padding 1px，inner
+   不紧贴描边，盖白不会遮住边框。登录页因自定义 padding 已单独处理。 */
+.el-input__inner:-webkit-autofill,
+.el-input__inner:-webkit-autofill:hover,
+.el-input__inner:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text);
+  caret-color: var(--text);
+  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset;
+  box-shadow: 0 0 0 1000px var(--surface) inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
 
 /* Tag —— 圆角统一 */
 .el-tag {

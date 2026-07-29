@@ -347,13 +347,77 @@ async function handleLogin() {
 
 .login-form {
   margin-top: var(--space-2);
+  /* 局部对齐 EP 输入框背景变量：默认/hover 均白底，与表单面板一致 */
+  --el-fill-color-blank: var(--surface);
+  --el-fill-color-light: var(--surface);
+  --el-input-bg-color: var(--surface);
+  --el-input-hover-bg-color: var(--surface);
 }
+.login-form :deep(.el-form-item) {
+  margin-bottom: 20px;
+}
+
+/* 输入框容器：白底 + 内描边 + 过渡。
+   padding 上下 1px：为 autofill 盖白留出 wrapper 描边空间，
+   否则 inner 的 inset 阴影会遮住上下描边。 */
 .login-form :deep(.el-input__wrapper) {
-  padding: 4px 14px;
-  border-radius: var(--radius);
+  padding: 1px 16px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background-color: var(--surface);
+  box-shadow: 0 0 0 1px var(--border) inset;
+  transition: box-shadow 0.2s ease;
+}
+.login-form :deep(.el-input__wrapper:hover) {
+  background-color: var(--surface);
+  box-shadow: 0 0 0 1px var(--border-strong) inset;
+}
+/* 聚焦：白底 + 品牌色描边 + 光晕（覆盖全局 is-focus） */
+.login-form :deep(.el-input__wrapper.is-focus) {
+  background-color: var(--surface);
+  box-shadow: 0 0 0 1px var(--brand) inset, var(--shadow-glow) !important;
 }
 .login-form :deep(.el-input__inner) {
-  height: 42px;
+  font-size: var(--text-lg);
+  color: var(--text);
+  background-color: transparent;
+}
+.login-form :deep(.el-input__inner::placeholder) {
+  color: var(--gray-400);
+}
+/* Chrome 自动填充会给 input 强加淡蓝背景(#E8F0FE)，且用 !important 无法用
+   background-color 覆盖。用超大 inset box-shadow 把背景盖成面板同色，
+   配合 5000s transition 冻结 autofill 背景变化，避免输入区域与外部色差。 */
+.login-form :deep(.el-input__inner:-webkit-autofill),
+.login-form :deep(.el-input__inner:-webkit-autofill:hover),
+.login-form :deep(.el-input__inner:-webkit-autofill:focus) {
+  -webkit-text-fill-color: var(--text);
+  caret-color: var(--text);
+  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset;
+  box-shadow: 0 0 0 1000px var(--surface) inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* 前缀图标：聚焦时跟随品牌色，强化交互反馈 */
+.login-form :deep(.el-input__prefix) {
+  color: var(--text-tertiary);
+  transition: color 0.2s ease;
+}
+.login-form :deep(.el-input__prefix-inner) {
+  margin-right: 4px;
+  font-size: 18px;
+}
+.login-form :deep(.el-input__wrapper.is-focus .el-input__prefix) {
+  color: var(--brand);
+}
+
+/* 密码显示按钮：hover 跟随品牌色 */
+.login-form :deep(.el-input__password) {
+  color: var(--text-tertiary);
+  transition: color 0.2s ease;
+}
+.login-form :deep(.el-input__password:hover) {
+  color: var(--brand);
 }
 
 .form-row { display: flex; gap: var(--space-3); }
