@@ -9,8 +9,12 @@ export const useAppStore = defineStore('app', () => {
 
   async function fetchPlatforms() {
     platforms.value = await getPlatforms()
-    if (platforms.value.length > 0 && !currentPlatform.value) {
-      currentPlatform.value = platforms.value[0].code
+    // currentPlatform 为空或不在列表中（如 token 平台已失效）时，兜底取第一个
+    if (platforms.value.length > 0) {
+      const exists = platforms.value.some(p => p.code === currentPlatform.value)
+      if (!exists) {
+        currentPlatform.value = platforms.value[0].code
+      }
     }
     return platforms.value
   }

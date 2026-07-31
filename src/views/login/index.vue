@@ -105,11 +105,13 @@ import { useRouter, useRoute } from 'vue-router'
 import { User, Lock } from '@element-plus/icons-vue'
 import { ElMessage, type FormInstance } from 'element-plus'
 import { useUserStore } from '@/store/user'
+import { useAppStore } from '@/store/app'
 import WMark from '@/components/WMark.vue'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+const appStore = useAppStore()
 const formRef = ref<FormInstance>()
 const loading = ref(false)
 
@@ -129,7 +131,9 @@ async function handleLogin() {
         username: form.username,
         password: btoa(form.password),
       }
-      await userStore.login('userPwdLogin', loginInfo)
+      const loginData: any = await userStore.login('userPwdLogin', loginInfo)
+      // 同步当前平台为后端 token 平台，避免前端 currentPlatform 与 token 实际平台不同步
+      if (loginData?.platform) appStore.currentPlatform = loginData.platform
       await userStore.fetchUserInfo()
       await userStore.fetchPermission()
       ElMessage.success('已进入控制台')

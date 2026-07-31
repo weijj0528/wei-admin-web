@@ -25,10 +25,10 @@
 
     <div class="header-right">
       <el-select
-        v-model="appStore.currentPlatform"
+        :model-value="appStore.currentPlatform"
         placeholder="平台"
         class="platform-select"
-        @change="handleSwitchPlatform"
+        @update:model-value="handleSwitchPlatform"
       >
         <template #prefix>
           <el-icon><Grid /></el-icon>
@@ -103,15 +103,17 @@ function findFirstPage(m: MenuVO): MenuVO | undefined {
 }
 
 async function handleSwitchPlatform(platform: string) {
-  if (switching.value) return
+  if (switching.value || platform === appStore.currentPlatform) return
   switching.value = true
   try {
     cancelAllPendingRequests()
     await switchPlatform(platform)
+    // 切换成功后才更新前端当前平台，避免失败时与后端 token 平台不同步
+    appStore.currentPlatform = platform
     await userStore.fetchPermission()
     ElMessage.success('平台已切换')
   } catch (e) {
-    // request 拦截器已 toast
+    // 切换失败保持原平台，request 拦截器已 toast
   } finally {
     switching.value = false
   }
