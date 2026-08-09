@@ -24,20 +24,18 @@
       <template #empty><el-empty description="暂无字典类型" /></template>
     </el-table>
     <template #dialog>
-      <el-dialog v-model="dialogVisible" :title="editForm.id ? '编辑类型' : '新建类型'" width="600px">
+      <el-dialog v-model="dialogVisible" :title="editForm.id ? '编辑类型' : '新建类型'" width="880px">
         <el-form :model="editForm" label-width="100px">
           <el-form-item label="编码" required><el-input v-model="editForm.code" /></el-form-item>
           <el-form-item label="名称" required><el-input v-model="editForm.name" /></el-form-item>
           <el-form-item label="数据类型">
-            <el-select v-model="editForm.dataType" placeholder="选择数据类型" style="width: 100%">
+            <el-select v-model="editForm.dataType" placeholder="选择数据类型" style="width: 100%" @change="onDataTypeChange">
               <el-option v-for="opt in dataTypeOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
             </el-select>
           </el-form-item>
           <el-form-item label="校验规则">
             <template v-if="editForm.dataType === 'OBJECT'">
-              <el-input v-model="editForm.validationRule" type="textarea" :rows="6"
-                placeholder='JSON Schema，例如：{"type":"object","required":["name"],"properties":{"name":{"type":"string"}}}' />
-              <div v-if="schemaError" style="color: #f56c6c; font-size: 12px; margin-top: 4px">{{ schemaError }}</div>
+              <JsonSchemaBuilder v-model="editForm.validationRule" />
             </template>
             <template v-else>
               <el-input v-model="editForm.validationRule" placeholder="正则表达式，例如 ^\d+$" />
@@ -60,10 +58,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import SearchBar from '@/components/SearchBar.vue'
 import ListLayout from '@/components/ListLayout.vue'
+import JsonSchemaBuilder from '@/components/JsonSchemaBuilder.vue'
 import { useCrud } from '@/composables/useCrud'
 import { listDictTypes, createDictType, updateDictType, deleteDictType, type DictTypeDTO } from '@/api/dict'
 
@@ -112,14 +110,11 @@ const {
   { id: undefined, code: '', name: '', remark: '', dataType: 'STRING', validationRule: '' } as DictTypeDTO
 )
 
-const schemaError = ref('')
-watch(() => editForm.validationRule, (val) => {
-  schemaError.value = ''
-  if (editForm.dataType === 'OBJECT' && val) {
-    try { JSON.parse(val) } catch (e: any) { schemaError.value = 'JSON 格式错误: ' + e.message }
-  }
-})
-watch(() => editForm.dataType, () => { schemaError.value = '' })
+// 切换数据类型时清空校验规则，避免正则与 JSON Schema 串用
+// 用 @change 而非 watch，避免编辑回填时误清 validationRule
+function onDataTypeChange() {
+  editForm.validationRule = ''
+}
 
 fetchData()
 </script>

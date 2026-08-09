@@ -20,7 +20,7 @@
       <template #empty><el-empty description="暂无字典项" /></template>
     </el-table>
     <template #dialog>
-      <el-dialog v-model="dialogVisible" :title="editForm.id ? '编辑项' : '新建项'" width="560px">
+      <el-dialog v-model="dialogVisible" :title="editForm.id ? '编辑项' : '新建项'" width="880px">
         <el-form :model="editForm" label-width="90px">
           <el-form-item label="字典类型" required>
             <el-select v-model="editForm.typeCode" placeholder="选择字典类型" filterable style="width: 100%"
@@ -36,7 +36,11 @@
           </el-form-item>
           <el-form-item label="项编码"><el-input v-model="editForm.code" /></el-form-item>
           <el-form-item label="项名称" required><el-input v-model="editForm.name" /></el-form-item>
-          <el-form-item label="项值">
+          <el-form-item v-if="currentType?.dataType === 'OBJECT'" label-width="0" class="item-value-block">
+            <div class="obj-value-label">项值</div>
+            <JsonSchemaForm ref="schemaForm" v-model="editForm.value" :schema="currentType.validationRule" style="width: 100%" />
+          </el-form-item>
+          <el-form-item v-else label="项值">
             <!-- NUMBER -->
             <template v-if="currentType?.dataType === 'NUMBER'">
               <el-input-number v-model="numberValue" :controls="false" style="width: 100%"
@@ -64,17 +68,6 @@
               <el-date-picker v-model="dateValue" type="datetime" placeholder="选择日期时间"
                 format="YYYY-MM-DD HH:mm:ss" value-format="YYYY-MM-DD HH:mm:ss" style="width: 100%" />
             </template>
-            <!-- OBJECT -->
-            <template v-else-if="currentType?.dataType === 'OBJECT'">
-              <div style="width: 100%">
-                <el-input v-model="editForm.value" type="textarea" :rows="5" placeholder="请输入合法的 JSON" />
-                <div style="margin-top: 4px; display: flex; justify-content: space-between; align-items: center">
-                  <span v-if="jsonError" style="color: #f56c6c; font-size: 12px">{{ jsonError }}</span>
-                  <span v-else-if="editForm.value" style="color: #67c23a; font-size: 12px">JSON 格式正确</span>
-                  <el-button size="small" link type="primary" @click="formatJson">格式化</el-button>
-                </div>
-              </div>
-            </template>
             <!-- STRING / default -->
             <template v-else>
               <el-input v-model="editForm.value" placeholder="请输入值" />
@@ -83,7 +76,7 @@
         </el-form>
         <template #footer>
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" :loading="submitting" @click="handleSubmit">确定</el-button>
+          <el-button type="primary" :loading="submitting" @click="onSubmit">确定</el-button>
         </template>
       </el-dialog>
     </template>
@@ -95,6 +88,7 @@ import { ref, watch, computed, onMounted } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import SearchBar from '@/components/SearchBar.vue'
 import ListLayout from '@/components/ListLayout.vue'
+import JsonSchemaForm from '@/components/JsonSchemaForm.vue'
 import { useCrud } from '@/composables/useCrud'
 import {
   listDictItems, createDictItem, updateDictItem, deleteDictItem,
@@ -129,28 +123,17 @@ const currentType = computed(() => allTypes.value.find(t => t.code === editForm.
 const numberValue = ref<number | undefined>(undefined)
 const dateValue = ref<string>('')
 const timeValue = ref<string>('')
-const jsonError = ref('')
+const schemaForm = ref()
 
 const onTypeChange = () => {
   editForm.value = ''
   numberValue.value = undefined
   dateValue.value = ''
   timeValue.value = ''
-  jsonError.value = ''
 }
 
 const onNumberChange = (val: number | undefined) => {
   editForm.value = val !== undefined && val !== null ? String(val) : ''
-}
-
-const formatJson = () => {
-  if (!editForm.value) return
-  try {
-    editForm.value = JSON.stringify(JSON.parse(editForm.value), null, 2)
-    jsonError.value = ''
-  } catch (e: any) {
-    jsonError.value = 'JSON 格式错误: ' + e.message
-  }
 }
 
 const loadTypes = async () => {
@@ -188,19 +171,35 @@ watch(dialogVisible, (v) => {
     numberValue.value = undefined
     dateValue.value = ''
     timeValue.value = ''
-    jsonError.value = ''
   }
 })
 // 日期/时间选择 → 同步 editForm.value
 watch(dateValue, (v) => { editForm.value = v || '' })
 watch(timeValue, (v) => { editForm.value = v || '' })
-// JSON 格式实时提示
-watch(() => editForm.value, (val) => {
-  jsonError.value = ''
-  if (currentType.value?.dataType === 'OBJECT' && val) {
-    try { JSON.parse(val) } catch (e: any) { jsonError.value = 'JSON 格式错误' }
+// OBJECT 类型提交前校验 JSON Schema 表单
+async function onSubmit() {
+  if (currentType.value?.dataType === 'OBJECT' && schemaForm.value && !(await schemaForm.value.validate())) {
+    return
   }
-})
+  await handleSubmit()
+}
 
 fetchData()
 </script>
+<style scoped>
+:deep(.item-value-block > .el-form-item__content) {
+  width: 100% !important;
+  margin-left: 0 !important;
+}
+.obj-value-label {
+  width: 90px;
+  font-size: 14px;
+  color: #606266;
+  line-height: 32px;
+  text-align: right;
+  padding: 0 12px 8px 0;
+  box-sizing: border-box;
+}
+</style>
+
+
