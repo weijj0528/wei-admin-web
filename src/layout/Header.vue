@@ -68,6 +68,10 @@ import { useTagsStore } from '@/store/tags'
 import { switchPlatform, logout as logoutApi } from '@/api/auth'
 import { cancelAllPendingRequests } from '@/utils/request'
 import type { MenuVO } from '@/api/auth'
+import WujieVue from 'wujie-vue3'
+
+/** 与子应用 BUS_EVENTS.PLATFORM_CHANGE 保持一致 */
+const PLATFORM_CHANGE_EVENT = 'platform-change'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -78,6 +82,8 @@ const switching = ref(false)
 onMounted(async () => {
   try {
     await appStore.fetchPlatforms()
+    // 平台列表就绪后通知已挂载的子应用当前平台
+    WujieVue.bus.$emit(PLATFORM_CHANGE_EVENT, appStore.currentPlatform)
   } catch (e) {
     // 平台列表获取失败不阻塞
   }
@@ -110,6 +116,8 @@ async function handleSwitchPlatform(platform: string) {
     await switchPlatform(platform)
     // 切换成功后才更新前端当前平台，避免失败时与后端 token 平台不同步
     appStore.currentPlatform = platform
+    // 通知已挂载的子应用同步当前平台
+    WujieVue.bus.$emit(PLATFORM_CHANGE_EVENT, platform)
     await userStore.fetchPermission()
     ElMessage.success('平台已切换')
   } catch (e) {

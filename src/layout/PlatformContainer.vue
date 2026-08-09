@@ -11,22 +11,25 @@
     <!-- 未配置入口 URL -->
     <el-empty v-else-if="!entryUrl" description="该平台未配置子应用入口URL，请在平台管理中设置 entryUrl" />
 
-    <!-- 加载中 -->
-    <div v-else-if="loading" class="loading-mask">
-      <el-icon class="is-loading" :size="32"><Loading /></el-icon>
-      <p>子应用加载中...</p>
-    </div>
+    <!-- WujieVue 必须始终挂载：beforeLoad 会置 loading=true，
+         若用 v-if 在加载瞬间卸载组件，会导致子应用启动中断、iframe 0 资源加载而超时 -->
+    <div v-else class="subapp-wrap">
+      <div v-if="loading" class="loading-mask">
+        <el-icon class="is-loading" :size="32"><Loading /></el-icon>
+        <p>子应用加载中...</p>
+      </div>
 
-    <!-- wujie 子应用挂载点 -->
-    <WujieVue
-      v-if="!loadError && entryUrl && !loading"
-      :name="platformCode"
-      :url="entryUrl"
-      :props="microProps"
-      :sync="true"
-      :afterMount="handleMounted"
-      :beforeLoad="handleBeforeLoad"
-    />
+      <!-- wujie 子应用挂载点 -->
+      <WujieVue
+        :key="remountKey"
+        :name="platformCode"
+        :url="entryUrl"
+        :props="microProps"
+        :sync="true"
+        :afterMount="handleMounted"
+        :beforeLoad="handleBeforeLoad"
+      />
+    </div>
   </div>
 </template>
 
@@ -92,13 +95,21 @@ onBeforeUnmount(() => {
 .platform-container {
   height: 100%;
 }
+.subapp-wrap {
+  position: relative;
+  height: 100%;
+  min-height: 400px;
+}
 .loading-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 400px;
   gap: 12px;
+  background: #fff;
   color: #909399;
 }
 </style>

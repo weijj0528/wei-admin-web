@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { getToken } from '@/utils/auth'
 import { useUserStore } from '@/store/user'
+import { useAppStore } from '@/store/app'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -65,6 +66,11 @@ router.beforeEach(async (to) => {
         userStore.logout()
         return { path: '/login', query: { redirect: to.path } }
       }
+    }
+    // 提前加载平台列表，保证子应用挂载时 props.currentPlatform 已就绪
+    const appStore = useAppStore()
+    if (appStore.platforms.length === 0) {
+      try { await appStore.fetchPlatforms() } catch { /* 不阻塞导航 */ }
     }
     return true
   } else {

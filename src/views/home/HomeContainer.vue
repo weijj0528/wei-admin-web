@@ -25,19 +25,23 @@
           <el-button type="primary" @click="retry">重试</el-button>
         </template>
       </el-result>
-      <div v-else-if="loading" class="loading-mask">
-        <el-icon class="is-loading" :size="32"><Loading /></el-icon>
-        <p>首页加载中...</p>
+      <!-- WujieVue 必须始终挂载：beforeLoad 会置 loading=true，
+           若用 v-if/v-else 切换会在加载瞬间卸载组件，导致子应用启动中断、iframe 0 资源加载 -->
+      <div v-else class="subapp-wrap">
+        <div v-if="loading" class="loading-mask">
+          <el-icon class="is-loading" :size="32"><Loading /></el-icon>
+          <p>首页加载中...</p>
+        </div>
+        <WujieVue
+          :key="remountKey"
+          :name="`home-${currentPage.id}`"
+          :url="currentPage.component!"
+          :props="microProps"
+          :sync="true"
+          :beforeLoad="handleBeforeLoad"
+          :afterMount="handleMounted"
+        />
       </div>
-      <WujieVue
-        v-else
-        :name="`home-${currentPage.id}`"
-        :url="currentPage.component!"
-        :props="microProps"
-        :sync="true"
-        :beforeLoad="handleBeforeLoad"
-        :afterMount="handleMounted"
-      />
     </template>
 
     <!-- 本地组件首页 -->
@@ -161,13 +165,21 @@ onBeforeUnmount(() => {
 }
 .t-icon { font-size: 16px; }
 
+.subapp-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 400px;
+}
 .loading-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 400px;
   gap: 12px;
+  background: var(--surface, #fff);
   color: var(--text-tertiary);
 }
 </style>
